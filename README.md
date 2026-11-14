@@ -22,10 +22,12 @@ Sistema web para administrar el préstamo y la devolución de equipos (laptops, 
 2. Esperar a que Maven descargue las dependencias.
 3. Ejecutar la clase `ProyectoSoaApplication`.
 
-### Con línea de comandos
+### Con línea de comandos (Windows)
 ```bash
-mvn spring-boot:run
+.\mvnw.cmd spring-boot:run
 ```
+
+El proyecto incluye Maven Wrapper, así no hace falta instalar Maven por separado.
 
 La aplicación queda disponible en `http://localhost:8080`.
 
@@ -50,10 +52,11 @@ src/main/java/com/soa/proyecto/
 
 - [Plan del proyecto](docs/plan-proyecto-soa.md)
 - [Contratos de la API y entidades](docs/contratos-api.md)
+- [Sprints y flujo de trabajo](docs/sprints.md)
 
 ## Trabajo en equipo
 
-- Trabajar en ramas individuales y abrir *pull requests* hacia `main`.
+- Trabajar en ramas `feature/<modulo>` y abrir *pull requests* hacia `develop`. No subir directo a `main`.
 - No subir contraseñas ni configuración local sensible.
 - Antes de modificar un archivo de otro integrante, coordinar con su dueño.
 - Ejecutar el proyecto después de cada integración.

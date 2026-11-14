@@ -9,6 +9,7 @@ Este documento organiza el trabajo del equipo por sprints cortos, con la entrega
 - **`feature/<modulo>`:** una rama por integrante o por tarea. Ejemplos: `feature/seguridad`, `feature/equipos`, `feature/prestamos`, `feature/devolucion`.
 - Cada avance entra a `develop` mediante **pull request**, no con push directo.
 - Solo cuando `develop` esté estable y probado, se integra a `main`.
+- Pasos detallados en [git-workflow.md](git-workflow.md).
 
 ### Pasos para cada integrante
 

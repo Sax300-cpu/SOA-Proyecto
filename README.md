@@ -53,6 +53,7 @@ src/main/java/com/soa/proyecto/
 - [Plan del proyecto](docs/plan-proyecto-soa.md)
 - [Contratos de la API y entidades](docs/contratos-api.md)
 - [Sprints y flujo de trabajo](docs/sprints.md)
+- [Flujo de trabajo con Git](docs/git-workflow.md)
 
 ## Trabajo en equipo
 

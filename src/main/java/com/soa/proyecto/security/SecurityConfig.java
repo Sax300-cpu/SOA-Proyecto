@@ -43,7 +43,7 @@ public class SecurityConfig {
                         // Recursos públicos: interfaz estática y endpoints de autenticación.
                         .requestMatchers("/", "/index.html", "/favicon.ico",
                                 "/css/**", "/js/**", "/img/**",
-                                "/api/auth/login", "/api/auth/logout", "/api/auth/me").permitAll()
+                                "/api/auth/**").permitAll()
                         // Equipos: consulta para ambos roles; escritura solo ADMIN.
                         .requestMatchers(HttpMethod.GET, "/api/equipos", "/api/equipos/*").hasAnyRole("ADMIN", "USUARIO")
                         .requestMatchers("/api/equipos/**").hasRole("ADMIN")

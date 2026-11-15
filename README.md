@@ -37,6 +37,17 @@ La configuración está en `src/main/resources/application.properties`. Por defe
 
 Ajusta `spring.datasource.username` y `spring.datasource.password` si tu MySQL usa otras credenciales.
 
+## Cuentas de demostración (solo desarrollo)
+
+Se crean automáticamente al ejecutar la aplicación:
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| admin | admin123 | ADMIN |
+| usuario | usuario123 | USUARIO |
+
+Las contraseñas se guardan encriptadas en la base de datos. No usar contraseñas reales.
+
 ## Estructura de paquetes
 
 ```

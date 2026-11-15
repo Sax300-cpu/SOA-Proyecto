@@ -6,6 +6,7 @@ Sistema web para administrar el préstamo y la devolución de equipos (laptops, 
 
 - **Cliente:** HTML, CSS, Bootstrap y JavaScript (carpeta `src/main/resources/static`).
 - **Servidor:** una sola aplicación Spring Boot con API REST.
+- **JSON:** `spring-boot-starter-json` (Jackson 3). Es necesario para que los `@RestController` devuelvan JSON; en Spring Boot 4 ya no se incluye automáticamente.
 - **Persistencia:** Spring Data JPA y MySQL.
 - **Seguridad:** Spring Security con inicio de sesión y roles.
 

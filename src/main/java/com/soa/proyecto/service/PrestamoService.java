@@ -40,10 +40,10 @@ public class PrestamoService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
         Equipo equipo = equipoRepository.findById(equipoId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo no encontrado"));
+                .orElseThrow(EquipoNoDisponibleException::new);
 
         if (!Boolean.TRUE.equals(equipo.getActivo()) || !Boolean.TRUE.equals(equipo.getDisponible())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El equipo no está disponible");
+            throw new EquipoNoDisponibleException();
         }
 
         Prestamo prestamo = new Prestamo();
@@ -73,7 +73,7 @@ public class PrestamoService {
         Equipo equipo = equipoRepository.findByIdForUpdate(prestamo.getEquipoId())
                 .filter(e -> Boolean.TRUE.equals(e.getActivo())
                         && Boolean.TRUE.equals(e.getDisponible()))
-                .orElseThrow(() -> new IllegalStateException("El equipo ya no está disponible"));
+                .orElseThrow(EquipoNoDisponibleException::new);
 
         equipo.setDisponible(false);
         equipoRepository.save(equipo);
@@ -86,12 +86,17 @@ public class PrestamoService {
     @Transactional
     public Prestamo rechazar(Long id) {
         Prestamo prestamo = buscarSolicitudPendiente(id);
+        Equipo equipo = equipoRepository.findByIdForUpdate(prestamo.getEquipoId())
+                .orElseThrow(EquipoNoDisponibleException::new);
+        equipo.setDisponible(true);
+        equipoRepository.save(equipo);
+
         prestamo.setEstado(EstadoPrestamo.RECHAZADO);
         return prestamoRepository.save(prestamo);
     }
 
     private Prestamo buscarSolicitudPendiente(Long id) {
-        Prestamo prestamo = prestamoRepository.findById(id)
+        Prestamo prestamo = prestamoRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Solicitud no encontrada"));
         if (prestamo.getEstado() != EstadoPrestamo.SOLICITADO) {
             throw new ResponseStatusException(

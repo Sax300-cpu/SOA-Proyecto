@@ -32,6 +32,9 @@ public class Prestamo {
     @Column(name = "preFechaSolicitud", nullable = false)
     private LocalDateTime fechaSolicitud;
 
+    @Column(name = "preFechaAprobacion")
+    private LocalDateTime fechaAprobacion;
+
     @Column(name = "preFechaEntrega")
     private LocalDateTime fechaEntrega;
 

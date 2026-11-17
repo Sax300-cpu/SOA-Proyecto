@@ -1,0 +1,9 @@
+dialog { width: min(94vw, 34rem); border: 1px solid #6c757d; border-radius: .75rem; padding: 1.5rem; }
+dialog::backdrop { background: rgb(0 0 0 / 55%); }
+button, select, a { min-height: 44px; }
+button:focus-visible, select:focus-visible, a:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid #0a58ca; outline-offset: 3px;
+}
+td, th { min-width: 7rem; }
+td { overflow-wrap: anywhere; max-width: 22rem; }
+[hidden] { display: none !important; }

@@ -76,12 +76,29 @@ Base: `/api`. El equipo puede ajustar estas rutas si lo acuerda y lo refleja aqu
 | GET | /api/prestamos | ADMIN | Historial completo (filtro opcional por estado) |
 
 ### Autenticación (responsable: Kevin Velasco)
-Propuesta inicial para no complicar: sesión del navegador con Spring Security.
 
-- El cliente estático y la API viven en el mismo servidor (mismo origen), así la cookie de sesión viaja automáticamente.
-- Login por formulario o endpoint propio; cierre de sesión con logout.
-- No usar JWT ni OAuth.
-- Las rutas de ADMIN deben rechazar las peticiones de USUARIO (código 403).
+Sesión del navegador con Spring Security; sin JWT ni OAuth.
+
+| Método | Ruta | Acceso | Descripción |
+|---|---|---|---|
+| POST | /api/auth/login | Público | Inicia sesión. Recibe `username` y `password` (form-encoded). |
+| POST | /api/auth/logout | Autenticado | Cierra la sesión. |
+| GET | /api/auth/me | Público | Devuelve el usuario actual o 401 si no hay sesión. |
+
+- El cliente y la API viven en el mismo servidor; la cookie de sesión viaja sola.
+- `POST /api/auth/login` responde `200` con `{username, rol}` en éxito y `401` con `{error}` si falla.
+- `GET /api/auth/me` responde `{username, nombre, rol}` (sin contraseña) o `401`.
+- Las rutas de ADMIN rechazan a USUARIO con `403`.
+- CSRF: Spring Security envía la cookie `XSRF-TOKEN`; el cliente debe devolverla en el encabezado `X-XSRF-TOKEN` en POST/PUT/DELETE.
+
+### Cuentas de demostración (solo desarrollo)
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| admin | admin123 | ADMIN |
+| usuario | usuario123 | USUARIO |
+
+Se crean automáticamente la primera vez que se ejecuta la aplicación. Las contraseñas se guardan encriptadas. No usar contraseñas reales de los integrantes.
 
 ## 4. Convenciones de código
 

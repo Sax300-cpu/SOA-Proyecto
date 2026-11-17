@@ -6,6 +6,7 @@ Sistema web para administrar el préstamo y la devolución de equipos (laptops, 
 
 - **Cliente:** HTML, CSS, Bootstrap y JavaScript (carpeta `src/main/resources/static`).
 - **Servidor:** una sola aplicación Spring Boot con API REST.
+- **JSON:** `spring-boot-starter-json` (Jackson 3). Es necesario para que los `@RestController` devuelvan JSON; en Spring Boot 4 ya no se incluye automáticamente.
 - **Persistencia:** Spring Data JPA y MySQL.
 - **Seguridad:** Spring Security con inicio de sesión y roles.
 
@@ -36,6 +37,17 @@ La aplicación queda disponible en `http://localhost:8080`.
 La configuración está en `src/main/resources/application.properties`. Por defecto usa la base `soa_prestamos`, que se crea automáticamente si no existe, y las tablas se generan con `ddl-auto=update`.
 
 Ajusta `spring.datasource.username` y `spring.datasource.password` si tu MySQL usa otras credenciales.
+
+## Cuentas de demostración (solo desarrollo)
+
+Se crean automáticamente al ejecutar la aplicación:
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| admin | admin123 | ADMIN |
+| usuario | usuario123 | USUARIO |
+
+Las contraseñas se guardan encriptadas en la base de datos. No usar contraseñas reales.
 
 ## Estructura de paquetes
 

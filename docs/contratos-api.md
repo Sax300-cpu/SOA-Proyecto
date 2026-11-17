@@ -32,6 +32,7 @@ Las entidades están en `src/main/java/com/soa/proyecto/model/` y los repositori
 | equipoId | Long | Referencia a Equipo.id |
 | estado | EstadoPrestamo (enum) | Ver estados abajo |
 | fechaSolicitud | LocalDateTime | Obligatorio |
+| fechaAprobacion | LocalDateTime | Se llena al aprobar |
 | fechaEntrega | LocalDateTime | Se llena al entregar |
 | fechaDevolucion | LocalDateTime | Se llena al devolver |
 | observacion | String | Opcional, para daño en devolución |
@@ -74,6 +75,8 @@ Base: `/api`. El equipo puede ajustar estas rutas si lo acuerda y lo refleja aqu
 | PUT | /api/prestamos/{id}/entregar | ADMIN | Cambiar a ENTREGADO |
 | PUT | /api/prestamos/{id}/devolver | ADMIN | Cambiar a DEVUELTO (con observación) |
 | GET | /api/prestamos | ADMIN | Historial completo (filtro opcional por estado) |
+
+`POST /api/prestamos` recibe JSON con `equipoId`; el `usuarioId` se toma de la sesión autenticada. La API devuelve `409` si el equipo no está disponible o si la solicitud ya no está en estado `SOLICITADO` al aprobarla o rechazarla.
 
 ### Entrega, devolución e historial (Emilio)
 

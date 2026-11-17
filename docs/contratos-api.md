@@ -75,6 +75,31 @@ Base: `/api`. El equipo puede ajustar estas rutas si lo acuerda y lo refleja aqu
 | PUT | /api/prestamos/{id}/devolver | ADMIN | Cambiar a DEVUELTO (con observación) |
 | GET | /api/prestamos | ADMIN | Historial completo (filtro opcional por estado) |
 
+### Entrega, devolución e historial (Emilio)
+
+- `PUT /api/prestamos/{id}/entregar`: sin cuerpo; exige `APROBADO`, registra
+  `fechaEntrega` y cambia a `ENTREGADO`. No entrega equipos desactivados.
+- `PUT /api/prestamos/{id}/devolver`: cuerpo opcional
+  `{"observacion":"Pantalla rayada"}`; exige `ENTREGADO`, registra
+  `fechaDevolucion`, cambia a `DEVUELTO` y marca el equipo disponible.
+  La observación es opcional, se recortan espacios y admite hasta 300 caracteres.
+  No se cambia el campo `activo` del equipo ni se registran cobros.
+- `GET /api/prestamos?estado=DEVUELTO`: historial administrativo; el filtro es opcional.
+- `GET /api/historial/mio?estado=DEVUELTO`: historial del `USUARIO` autenticado;
+  el filtro es opcional. No recibe un identificador de usuario del cliente.
+  Esta ruta complementa `/api/prestamos/mios`, cuya implementación corresponde a Luis,
+  y evita el patrón administrativo `/api/prestamos/**` de la seguridad de Kevin.
+- Las cuatro rutas responden JSON y devuelven 200 al completarse. Errores de este
+  módulo: 400 para estados/datos inválidos, 401 sin sesión, 403 sin el rol requerido,
+  404 para préstamo/equipo inexistente. El cuerpo de errores del controlador es
+  `{"error":"mensaje"}`; la seguridad puede rechazar una petición antes del controlador.
+- Historial ordenado por fecha de solicitud descendente y, en empates, id descendente.
+- Las escrituras usan una transacción y bloqueo de préstamo/equipo: una segunda
+  entrega o devolución del mismo préstamo debe rechazarse por su estado.
+
+Pantalla del módulo: `/devoluciones.html`, con la sesión y CSRF del módulo de Kevin.
+Detalles y comprobaciones manuales: [entrega-devolucion.md](entrega-devolucion.md).
+
 ### Autenticación (responsable: Kevin Velasco)
 
 Sesión del navegador con Spring Security; sin JWT ni OAuth.

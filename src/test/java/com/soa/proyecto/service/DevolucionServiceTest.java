@@ -29,8 +29,12 @@ class DevolucionServiceTest {
 
     @BeforeEach
     void preparar() {
-        prestamo = new Prestamo(1L, 2L, 3L, EstadoPrestamo.APROBADO,
-                LocalDateTime.of(2026, 11, 16, 10, 0), null, null, null);
+        prestamo = new Prestamo();
+        prestamo.setId(1L);
+        prestamo.setUsuarioId(2L);
+        prestamo.setEquipoId(3L);
+        prestamo.setEstado(EstadoPrestamo.APROBADO);
+        prestamo.setFechaSolicitud(LocalDateTime.of(2026, 11, 16, 10, 0));
         equipo = new Equipo(3L, "Laptop", "", false, true);
         when(prestamos.findById(1L)).thenReturn(Optional.of(prestamo));
         when(equipos.findById(3L)).thenReturn(Optional.of(equipo));
@@ -130,8 +134,12 @@ class DevolucionServiceTest {
 
     @Test
     void historialCompletoOrdenaYPermiteFiltrarPorEstado() {
-        Prestamo reciente = new Prestamo(4L, 5L, 6L, EstadoPrestamo.DEVUELTO,
-                prestamo.getFechaSolicitud().plusDays(1), null, null, null);
+        Prestamo reciente = new Prestamo();
+        reciente.setId(4L);
+        reciente.setUsuarioId(5L);
+        reciente.setEquipoId(6L);
+        reciente.setEstado(EstadoPrestamo.DEVUELTO);
+        reciente.setFechaSolicitud(prestamo.getFechaSolicitud().plusDays(1));
         when(prestamos.findAll()).thenReturn(List.of(prestamo, reciente));
         assertEquals(List.of(reciente, prestamo), servicio.historial(null));
         when(prestamos.findByEstado(EstadoPrestamo.DEVUELTO)).thenReturn(List.of(reciente));

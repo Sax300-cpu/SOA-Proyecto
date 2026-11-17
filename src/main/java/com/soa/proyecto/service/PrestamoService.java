@@ -69,6 +69,15 @@ public class PrestamoService {
     @Transactional
     public Prestamo aprobar(Long id) {
         Prestamo prestamo = buscarSolicitudPendiente(id);
+
+        Equipo equipo = equipoRepository.findByIdForUpdate(prestamo.getEquipoId())
+                .filter(e -> Boolean.TRUE.equals(e.getActivo())
+                        && Boolean.TRUE.equals(e.getDisponible()))
+                .orElseThrow(() -> new IllegalStateException("El equipo ya no está disponible"));
+
+        equipo.setDisponible(false);
+        equipoRepository.save(equipo);
+
         prestamo.setEstado(EstadoPrestamo.APROBADO);
         prestamo.setFechaAprobacion(LocalDateTime.now());
         return prestamoRepository.save(prestamo);

@@ -54,6 +54,7 @@ src/main/java/com/soa/proyecto/
 - [Contratos de la API y entidades](docs/contratos-api.md)
 - [Sprints y flujo de trabajo](docs/sprints.md)
 - [Flujo de trabajo con Git](docs/git-workflow.md)
+- [Entrega, devolución e historial — módulo de Emilio](docs/entrega-devolucion.md)
 
 ## Trabajo en equipo
 

@@ -85,12 +85,9 @@ public class PrestamoService {
 
     @Transactional
     public Prestamo rechazar(Long id) {
+        // Rechazar solo cambia el estado de la solicitud; no altera la disponibilidad
+        // del equipo, que se controla en aprobar (false) y devolver (true).
         Prestamo prestamo = buscarSolicitudPendiente(id);
-        Equipo equipo = equipoRepository.findByIdForUpdate(prestamo.getEquipoId())
-                .orElseThrow(EquipoNoDisponibleException::new);
-        equipo.setDisponible(true);
-        equipoRepository.save(equipo);
-
         prestamo.setEstado(EstadoPrestamo.RECHAZADO);
         return prestamoRepository.save(prestamo);
     }

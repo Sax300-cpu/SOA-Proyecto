@@ -79,18 +79,19 @@ class PrestamoServiceTest {
     }
 
     @Test
-    void rechazarBloqueaYLiberaElEquipoAntesDeGuardarElRechazo() {
+    void rechazarCambiaElEstadoSinAlterarLaDisponibilidad() {
+        // El equipo puede estar reservado por otra solicitud ya aprobada;
+        // rechazar esta solicitud no debe liberarlo.
         equipo.setDisponible(false);
 
         servicio.rechazar(1L);
 
-        var orden = inOrder(prestamos, equipos);
-        orden.verify(prestamos).findByIdForUpdate(1L);
-        orden.verify(equipos).findByIdForUpdate(3L);
-        orden.verify(equipos).save(equipo);
-        orden.verify(prestamos).save(prestamo);
-        assertTrue(equipo.getDisponible());
         assertEquals(EstadoPrestamo.RECHAZADO, prestamo.getEstado());
+        assertFalse(equipo.getDisponible());
+        verify(prestamos).findByIdForUpdate(1L);
+        verify(prestamos).save(prestamo);
+        verify(equipos, never()).findByIdForUpdate(any());
+        verify(equipos, never()).save(any());
     }
 
     @Test

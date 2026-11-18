@@ -37,7 +37,7 @@ class PrestamoServiceTest {
 
         when(usuarios.findByUsername("usuario")).thenReturn(Optional.of(usuario));
         when(equipos.findById(3L)).thenReturn(Optional.of(equipo));
-        when(equipos.findByIdForUpdate(3L)).thenReturn(Optional.of(equipo));
+        when(equipos.findEquipoById(3L)).thenReturn(Optional.of(equipo));
         when(prestamos.findByIdForUpdate(1L)).thenReturn(Optional.of(prestamo));
         when(prestamos.save(any(Prestamo.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(equipos.save(any(Equipo.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -63,10 +63,10 @@ class PrestamoServiceTest {
 
     @Test
     void aprobarSolicitudFallaSiEquipoNoExisteEstaInactivoONoDisponible() {
-        when(equipos.findByIdForUpdate(3L)).thenReturn(Optional.empty());
+        when(equipos.findEquipoById(3L)).thenReturn(Optional.empty());
         assertThrows(EquipoNoDisponibleException.class, () -> servicio.aprobar(1L));
 
-        when(equipos.findByIdForUpdate(3L)).thenReturn(Optional.of(equipo));
+        when(equipos.findEquipoById(3L)).thenReturn(Optional.of(equipo));
         equipo.setActivo(false);
         assertThrows(EquipoNoDisponibleException.class, () -> servicio.aprobar(1L));
 
@@ -74,7 +74,7 @@ class PrestamoServiceTest {
         equipo.setDisponible(false);
         assertThrows(EquipoNoDisponibleException.class, () -> servicio.aprobar(1L));
 
-        verify(equipos, times(3)).findByIdForUpdate(3L);
+        verify(equipos, times(3)).findEquipoById(3L);
         verify(prestamos, never()).save(any());
     }
 
@@ -90,7 +90,7 @@ class PrestamoServiceTest {
         assertFalse(equipo.getDisponible());
         verify(prestamos).findByIdForUpdate(1L);
         verify(prestamos).save(prestamo);
-        verify(equipos, never()).findByIdForUpdate(any());
+        verify(equipos, never()).findEquipoById(any());
         verify(equipos, never()).save(any());
     }
 
@@ -102,6 +102,6 @@ class PrestamoServiceTest {
                 ResponseStatusException.class, () -> servicio.rechazar(1L));
 
         assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
-        verify(equipos, never()).findByIdForUpdate(any());
+        verify(equipos, never()).findEquipoById(any());
     }
 }

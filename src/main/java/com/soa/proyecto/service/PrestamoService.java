@@ -70,7 +70,7 @@ public class PrestamoService {
     public Prestamo aprobar(Long id) {
         Prestamo prestamo = buscarSolicitudPendiente(id);
 
-        Equipo equipo = equipoRepository.findByIdForUpdate(prestamo.getEquipoId())
+        Equipo equipo = equipoRepository.findEquipoById(prestamo.getEquipoId())
                 .filter(e -> Boolean.TRUE.equals(e.getActivo())
                         && Boolean.TRUE.equals(e.getDisponible()))
                 .orElseThrow(EquipoNoDisponibleException::new);

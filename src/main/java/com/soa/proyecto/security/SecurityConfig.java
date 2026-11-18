@@ -41,7 +41,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         // Recursos públicos: interfaz estática y endpoints de autenticación.
-                        .requestMatchers("/", "/index.html", "/favicon.ico",
+                        .requestMatchers("/", "/**/*.html", "/favicon.ico",
                                 "/css/**", "/js/**", "/img/**",
                                 "/api/auth/**").permitAll()
                         // Equipos: consulta para ambos roles; escritura solo ADMIN.

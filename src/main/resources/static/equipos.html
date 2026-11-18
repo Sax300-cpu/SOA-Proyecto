@@ -43,15 +43,36 @@
                 <button id="actualizar" class="btn btn-outline-secondary" disabled>Actualizar</button>
             </div>
         </div>
+        <form id="busqueda" class="d-flex gap-2 mb-3" role="search" aria-label="Buscar equipos">
+            <label for="textoBusqueda" class="visually-hidden">Nombre o descripción del equipo</label>
+            <input id="textoBusqueda" type="search" class="form-control" placeholder="Nombre o descripción del equipo">
+            <button type="submit" class="btn btn-outline-primary">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/></svg>
+                Buscar
+            </button>
+        </form>
         <div class="table-responsive bg-white">
             <table class="table table-striped align-middle mb-0">
                 <caption>La disponibilidad puede cambiar cuando se aprueba una solicitud.</caption>
-                <thead class="table-dark"><tr><th scope="col">ID</th><th scope="col">Nombre</th>
+                <thead class="table-dark"><tr><th id="columnaId" scope="col" hidden>ID</th><th scope="col">Nombre</th>
                     <th scope="col">Descripción</th><th scope="col">Disponibilidad</th><th scope="col">Acciones</th></tr></thead>
-                <tbody id="equipos"><tr><td colspan="5">Cargando equipos…</td></tr></tbody>
+                <tbody id="equipos"><tr><td colspan="4">Cargando equipos…</td></tr></tbody>
             </table>
         </div>
     </section>
+    <dialog id="solicitar" class="border rounded p-4" aria-labelledby="tituloSolicitud">
+        <form id="formSolicitar">
+            <h2 id="tituloSolicitud" class="h4">Confirmar solicitud</h2>
+            <p id="equipoSolicitud" class="fw-bold mb-1"></p>
+            <p id="descripcionSolicitud"></p>
+            <p>La solicitud queda pendiente de aprobación. La disponibilidad puede cambiar hasta que se apruebe.</p>
+            <p id="errorSolicitud" class="text-danger" role="alert" hidden></p>
+            <div class="d-flex flex-wrap justify-content-end gap-2">
+                <button id="cancelarSolicitud" type="button" class="btn btn-outline-secondary" autofocus>Cancelar</button>
+                <button class="btn btn-primary" type="submit">Confirmar solicitud</button>
+            </div>
+        </form>
+    </dialog>
 </main>
 </body>
 </html>

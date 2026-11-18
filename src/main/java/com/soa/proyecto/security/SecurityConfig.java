@@ -4,6 +4,7 @@ import tools.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.Authentication;
@@ -14,6 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Configuration
@@ -58,13 +60,15 @@ public class SecurityConfig {
                         .loginProcessingUrl("/api/auth/login")
                         .successHandler((request, response, auth) -> {
                             response.setStatus(200);
-                            response.setContentType("application/json");
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                             objectMapper.writeValue(response.getWriter(),
                                     Map.of("username", auth.getName(), "rol", rolDe(auth)));
                         })
                         .failureHandler((request, response, exception) -> {
                             response.setStatus(401);
-                            response.setContentType("application/json");
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                             objectMapper.writeValue(response.getWriter(), Map.of("error", "Credenciales inválidas"));
                         })
                 )
@@ -72,19 +76,22 @@ public class SecurityConfig {
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler((request, response, auth) -> {
                             response.setStatus(200);
-                            response.setContentType("application/json");
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                             objectMapper.writeValue(response.getWriter(), Map.of("mensaje", "Sesión cerrada"));
                         })
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, exception) -> {
                             response.setStatus(401);
-                            response.setContentType("application/json");
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                             objectMapper.writeValue(response.getWriter(), Map.of("error", "No autenticado"));
                         })
                         .accessDeniedHandler((request, response, exception) -> {
                             response.setStatus(403);
-                            response.setContentType("application/json");
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                             objectMapper.writeValue(response.getWriter(), Map.of("error", "Sin permisos"));
                         })
                 );

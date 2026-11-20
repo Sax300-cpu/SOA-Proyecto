@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+// Endpoints REST para registrar entregas, devoluciones y consultar el historial.
 @RestController
 @RequiredArgsConstructor
 public class DevolucionController {

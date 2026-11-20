@@ -53,6 +53,7 @@
         fila.appendChild(celda);
     }
 
+    // Envía PUT /api/prestamos/{id}/aprobar o /rechazar con token CSRF y recarga la tabla.
     async function cambiarEstado(id, accion) {
         try {
             const csrfRespuesta = await fetchConSesion("/api/auth/csrf");

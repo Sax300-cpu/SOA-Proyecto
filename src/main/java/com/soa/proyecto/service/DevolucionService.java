@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// Reglas de negocio de entrega, devolución (libera el equipo) e historial por rol.
 @Service
 @RequiredArgsConstructor
 public class DevolucionService {

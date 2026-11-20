@@ -49,6 +49,7 @@ function mostrarError(texto) {
     mensaje.hidden = false;
 }
 
+// Valida los datos, pide el token CSRF y crea la cuenta USUARIO en POST /api/auth/registro.
 async function registrarUsuario(evento) {
     if (evento) evento.preventDefault();
 

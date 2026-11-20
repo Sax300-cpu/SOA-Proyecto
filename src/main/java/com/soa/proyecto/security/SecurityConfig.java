@@ -18,6 +18,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 import java.util.Map;
 
+// Configura Spring Security: permisos por rol, CSRF, login/logout y respuestas JSON.
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -64,6 +65,7 @@ public class SecurityConfig {
                                     Map.of("username", auth.getName(), "rol", rolDe(auth)));
                         })
                         .failureHandler((request, response, exception) -> {
+                            // Distingue campos vacíos, usuario inexistente o contraseña incorrecta.
                             String username = request.getParameter("username");
                             String password = request.getParameter("password");
                             String mensajeError;
@@ -107,6 +109,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // Quita el prefijo "ROLE_" de Spring Security para devolver ADMIN o USUARIO.
     private String rolDe(Authentication auth) {
         for (GrantedAuthority permiso : auth.getAuthorities()) {
             String nombre = permiso.getAuthority();

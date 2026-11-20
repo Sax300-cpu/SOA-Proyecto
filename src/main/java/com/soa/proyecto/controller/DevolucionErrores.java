@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
+// Convierte excepciones de préstamos y devoluciones en respuestas JSON {"error": "..."}.
 @RestControllerAdvice(assignableTypes = {DevolucionController.class, SolicitudController.class})
 public class DevolucionErrores {
 

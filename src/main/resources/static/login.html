@@ -49,6 +49,7 @@ function mostrarMensaje(texto, tipo = 'danger') {
     mensaje.hidden = false;
 }
 
+// Pide el token CSRF y envía credenciales por POST a Spring Security (/api/auth/login).
 async function iniciarSesion(evento) {
     if (evento) evento.preventDefault();
 

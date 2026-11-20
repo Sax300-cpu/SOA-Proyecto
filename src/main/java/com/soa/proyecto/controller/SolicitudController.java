@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+// Endpoints REST para solicitar préstamos, ver pendientes y aprobar/rechazar.
 @RestController
 @RequestMapping("/api/prestamos")
 @RequiredArgsConstructor

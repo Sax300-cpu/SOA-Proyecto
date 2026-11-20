@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// Reglas de negocio de solicitudes: crear, aprobar (bloquea disponibilidad) y rechazar.
 @Service
 @RequiredArgsConstructor
 public class PrestamoService {

@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+// Reglas de negocio del catálogo: listar, crear, editar y desactivar equipos sin borrar historial.
 @Service
 @RequiredArgsConstructor
 public class EquipoService {

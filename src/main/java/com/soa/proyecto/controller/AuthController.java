@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+// Endpoints públicos de sesión: token CSRF, usuario actual (/me) y registro.
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -47,6 +48,7 @@ public class AuthController {
         return ResponseEntity.ok(new UsuarioSesion(usuario.getUsername(), usuario.getNombre(), usuario.getRol()));
     }
 
+    // Crea una cuenta nueva asignando siempre rol USUARIO (nunca ADMIN).
     @PostMapping("/registro")
     public ResponseEntity<?> registrar(@RequestBody(required = false) RegistroPeticion datos) {
         if (datos == null || datos.nombre() == null || datos.nombre().isBlank()

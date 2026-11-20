@@ -1,5 +1,6 @@
 'use strict';
 
+// Envuelve fetch() para incluir la cookie de sesión y redirigir al login si devuelve 401.
 async function fetchConSesion(ruta, opciones = {}) {
     const respuesta = await fetch(ruta, { credentials: 'same-origin', ...opciones });
     if (respuesta.status === 401) {
@@ -9,6 +10,7 @@ async function fetchConSesion(ruta, opciones = {}) {
     return respuesta;
 }
 
+// Dibuja la barra compartida, verifica /api/auth/me, filtra enlaces por rol y conecta el logout.
 async function iniciarEncabezado() {
     const encabezado = document.getElementById('encabezado');
     encabezado.innerHTML = `
@@ -90,6 +92,7 @@ async function iniciarEncabezado() {
     }
 }
 
+// Recarga si el navegador vuelve con el botón Atrás usando caché, para revalidar la sesión.
 const sesionActual = iniciarEncabezado();
 window.addEventListener('pageshow', evento => {
     if (evento.persisted) window.location.reload();

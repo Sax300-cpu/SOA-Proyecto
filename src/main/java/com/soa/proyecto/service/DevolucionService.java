@@ -8,30 +8,23 @@ import com.soa.proyecto.repository.PrestamoRepository;
 import com.soa.proyecto.repository.UsuarioRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class DevolucionService {
 
     private final PrestamoRepository prestamos;
     private final EquipoRepository equipos;
     private final UsuarioRepository usuarios;
     private final EntityManager entityManager;
-
-    public DevolucionService(PrestamoRepository prestamos, EquipoRepository equipos,
-                             UsuarioRepository usuarios, EntityManager entityManager) {
-        this.prestamos = prestamos;
-        this.equipos = equipos;
-        this.usuarios = usuarios;
-        this.entityManager = entityManager;
-    }
 
     @Transactional
     public Prestamo entregar(Long id) {
@@ -102,7 +95,9 @@ public class DevolucionService {
     }
 
     private List<Prestamo> ordenar(List<Prestamo> registros) {
-        return registros.stream().sorted(Comparator.comparing(Prestamo::getFechaSolicitud)
-                .reversed().thenComparing(Prestamo::getId, Comparator.reverseOrder())).toList();
+        return registros.stream().sorted((a, b) -> {
+            int porFecha = b.getFechaSolicitud().compareTo(a.getFechaSolicitud());
+            return porFecha != 0 ? porFecha : b.getId().compareTo(a.getId());
+        }).toList();
     }
 }

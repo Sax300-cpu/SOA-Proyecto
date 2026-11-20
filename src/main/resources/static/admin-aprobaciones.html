@@ -13,6 +13,7 @@
 <header id="encabezado" class="bg-dark text-white py-3" data-rol="ADMIN"></header>
 <main class="container py-4">
     <h1 class="mb-4">Gestión de Solicitudes Pendientes</h1>
+    <div id="mensaje" class="alert" role="alert" hidden></div>
 
     <div class="table-responsive">
         <table class="table table-striped table-bordered align-middle">
@@ -34,31 +35,16 @@
 <script>
     const tablaPendientes = document.getElementById("tablaPendientes");
 
-    function obtenerTokenCsrf() {
-        const cookie = document.cookie
-            .split("; ")
-            .find((parte) => parte.startsWith("XSRF-TOKEN="));
-        return cookie ? decodeURIComponent(cookie.substring("XSRF-TOKEN=".length)) : null;
-    }
-
-    async function prepararCsrf() {
-        const respuesta = await fetchConSesion("/api/auth/csrf");
-        if (!respuesta.ok) {
-            throw new Error("No se pudo preparar la protección CSRF.");
-        }
+    function mostrarMensaje(texto, tipo = "danger") {
+        const aviso = document.getElementById("mensaje");
+        aviso.className = `alert alert-${tipo}`;
+        aviso.textContent = texto;
+        aviso.hidden = false;
     }
 
     async function mensajeError(respuesta) {
-        const texto = await respuesta.text();
-        if (texto) {
-            try {
-                const detalle = JSON.parse(texto);
-                return detalle.detail || detalle.message || detalle.error || texto;
-            } catch {
-                return texto;
-            }
-        }
-        return `Error HTTP ${respuesta.status}`;
+        const datos = await respuesta.json().catch(() => null);
+        return datos?.error || datos?.detail || datos?.message || `Error HTTP ${respuesta.status}`;
     }
 
     function agregarCelda(fila, valor) {
@@ -69,27 +55,27 @@
 
     async function cambiarEstado(id, accion) {
         try {
-            if (!obtenerTokenCsrf()) {
-                await prepararCsrf();
+            const csrfRespuesta = await fetchConSesion("/api/auth/csrf");
+            if (!csrfRespuesta.ok) {
+                throw new Error("No se pudo preparar la protección CSRF.");
             }
-            const token = obtenerTokenCsrf();
-            if (!token) {
-                throw new Error("No se recibió el token CSRF.");
-            }
+            const csrf = await csrfRespuesta.json();
 
             const respuesta = await fetchConSesion(`/api/prestamos/${id}/${accion}`, {
                 method: "PUT",
-                credentials: "same-origin",
-                headers: { "X-XSRF-TOKEN": token }
+                headers: { [csrf.headerName]: csrf.token }
             });
             if (!respuesta.ok) {
                 throw new Error(await mensajeError(respuesta));
             }
 
-            alert(`Solicitud ${accion === "aprobar" ? "aprobada" : "rechazada"} correctamente.`);
+            mostrarMensaje(
+                `Solicitud #${id} ${accion === "aprobar" ? "aprobada" : "rechazada"} correctamente.`,
+                "success"
+            );
             await cargarPendientes();
         } catch (error) {
-            alert(`No se pudo ${accion === "aprobar" ? "aprobar" : "rechazar"} la solicitud: ${error.message}`);
+            mostrarMensaje(`No se pudo ${accion === "aprobar" ? "aprobar" : "rechazar"} la solicitud: ${error.message}`);
         }
     }
 
@@ -126,20 +112,20 @@
                 aprobar.type = "button";
                 aprobar.className = "btn btn-success btn-sm me-2";
                 aprobar.textContent = "Aprobar";
-                aprobar.addEventListener("click", () => cambiarEstado(prestamo.id, "aprobar"));
+                aprobar.onclick = () => cambiarEstado(prestamo.id, "aprobar");
 
                 const rechazar = document.createElement("button");
                 rechazar.type = "button";
                 rechazar.className = "btn btn-danger btn-sm";
                 rechazar.textContent = "Rechazar";
-                rechazar.addEventListener("click", () => cambiarEstado(prestamo.id, "rechazar"));
+                rechazar.onclick = () => cambiarEstado(prestamo.id, "rechazar");
 
                 acciones.append(aprobar, rechazar);
                 fila.appendChild(acciones);
                 tablaPendientes.appendChild(fila);
             });
         } catch (error) {
-            alert(`No se pudieron cargar las solicitudes pendientes: ${error.message}`);
+            mostrarMensaje(`No se pudieron cargar las solicitudes pendientes: ${error.message}`);
         }
     }
 

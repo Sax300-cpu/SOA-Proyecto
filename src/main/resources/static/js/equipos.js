@@ -66,8 +66,9 @@ async function cargar() {
     mostrarEquipos();
 }
 
+// Convierte a minúsculas y quita tildes para comparar texto fácilmente en el buscador.
 function normalizar(texto) {
-    return texto.toLocaleLowerCase('es').normalize('NFD').replace(/\p{M}/gu, '');
+    return texto.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 function mostrarEquipos() {
@@ -164,8 +165,14 @@ elemento('formSolicitar').addEventListener('submit', evento => {
 
 elemento('formEquipo').addEventListener('submit', evento => {
     evento.preventDefault();
+    const nombre = elemento('nombre').value.trim();
+    const descripcion = elemento('descripcion').value.trim();
+    if (!nombre) {
+        mensaje('El nombre del equipo es obligatorio.');
+        return;
+    }
     accion(async () => {
-        const datos = { nombre: elemento('nombre').value.trim(), descripcion: elemento('descripcion').value.trim() };
+        const datos = { nombre, descripcion };
         await escribir(editando === null ? '/api/equipos' : `/api/equipos/${editando}`,
             editando === null ? 'POST' : 'PUT', datos);
         cancelarEdicion();

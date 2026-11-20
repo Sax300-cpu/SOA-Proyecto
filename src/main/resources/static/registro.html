@@ -13,7 +13,7 @@
             <h1 class="h4 mb-1">Registrar nuevo usuario</h1>
             <p class="text-body-secondary mb-3">Crea tu cuenta para solicitar equipos tecnológicos</p>
             <div id="mensaje" class="alert alert-danger" role="alert" hidden></div>
-            <form id="registroForm" novalidate>
+            <form id="registroForm" onsubmit="registrarUsuario(event)" novalidate>
                 <div class="mb-3">
                     <label for="nombre" class="form-label">Nombre completo</label>
                     <input id="nombre" name="nombre" class="form-control" maxlength="50" autocomplete="name" required>
@@ -28,7 +28,7 @@
                     <input id="password" name="password" type="password" class="form-control" minlength="6" maxlength="72" autocomplete="new-password" required>
                     <div class="form-text">Mínimo 6 caracteres.</div>
                 </div>
-                <button id="registrar" type="submit" class="btn btn-primary w-100">Registrarse</button>
+                <button id="registrar" type="button" class="btn btn-primary w-100" onclick="registrarUsuario()">Registrarse</button>
             </form>
             <hr class="my-3">
             <a href="/login.html" class="btn btn-outline-secondary w-100">Volver al inicio de sesión</a>
@@ -43,13 +43,35 @@ fetch('/api/auth/me', { credentials: 'same-origin' })
     .then(r => { if (r.ok) window.location.replace('/'); })
     .catch(() => {});
 
-document.getElementById('registroForm').addEventListener('submit', async (evento) => {
-    evento.preventDefault();
+function mostrarError(texto) {
     const mensaje = document.getElementById('mensaje');
-    const boton = document.getElementById('registrar');
-    mensaje.hidden = true;
-    boton.disabled = true;
+    mensaje.textContent = texto;
+    mensaje.hidden = false;
+}
 
+async function registrarUsuario(evento) {
+    if (evento) evento.preventDefault();
+
+    const nombre = document.getElementById('nombre').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const boton = document.getElementById('registrar');
+    document.getElementById('mensaje').hidden = true;
+
+    if (!nombre || !username || !password) {
+        mostrarError('Todos los campos son obligatorios.');
+        return;
+    }
+    if (username.includes(' ')) {
+        mostrarError('El nombre de usuario no debe contener espacios.');
+        return;
+    }
+    if (password.length < 6) {
+        mostrarError('La contraseña debe tener al menos 6 caracteres.');
+        return;
+    }
+
+    boton.disabled = true;
     try {
         const csrfRespuesta = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
         if (!csrfRespuesta.ok) {
@@ -64,11 +86,7 @@ document.getElementById('registroForm').addEventListener('submit', async (evento
                 'Content-Type': 'application/json',
                 [csrf.headerName]: csrf.token
             },
-            body: JSON.stringify({
-                nombre: document.getElementById('nombre').value.trim(),
-                username: document.getElementById('username').value.trim(),
-                password: document.getElementById('password').value
-            })
+            body: JSON.stringify({ nombre, username, password })
         });
 
         if (respuesta.ok) {
@@ -77,15 +95,13 @@ document.getElementById('registroForm').addEventListener('submit', async (evento
         }
 
         const datos = await respuesta.json().catch(() => null);
-        mensaje.textContent = (datos && datos.error) ? datos.error : 'No se pudo registrar el usuario.';
-        mensaje.hidden = false;
+        mostrarError((datos && datos.error) ? datos.error : 'No se pudo registrar el usuario.');
     } catch (error) {
-        mensaje.textContent = 'Error de conexión. Inténtalo de nuevo.';
-        mensaje.hidden = false;
+        mostrarError('Error de conexión. Inténtalo de nuevo.');
     } finally {
         boton.disabled = false;
     }
-});
+}
 </script>
 </body>
 </html>

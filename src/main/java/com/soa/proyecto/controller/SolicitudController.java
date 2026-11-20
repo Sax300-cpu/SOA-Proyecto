@@ -4,6 +4,7 @@ import com.soa.proyecto.dto.SolicitudPrestamoRequest;
 import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.model.Prestamo;
 import com.soa.proyecto.service.PrestamoService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,13 +21,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/prestamos")
+@RequiredArgsConstructor
 public class SolicitudController {
 
     private final PrestamoService prestamoService;
-
-    public SolicitudController(PrestamoService prestamoService) {
-        this.prestamoService = prestamoService;
-    }
 
     @PostMapping
     public ResponseEntity<Prestamo> solicitar(

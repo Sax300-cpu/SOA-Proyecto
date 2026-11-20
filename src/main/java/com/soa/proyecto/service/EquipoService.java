@@ -3,6 +3,7 @@ package com.soa.proyecto.service;
 import com.soa.proyecto.dto.EquipoRequest;
 import com.soa.proyecto.model.Equipo;
 import com.soa.proyecto.repository.EquipoRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,12 +12,9 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class EquipoService {
     private final EquipoRepository repository;
-
-    public EquipoService(EquipoRepository repository) {
-        this.repository = repository;
-    }
 
     @Transactional(readOnly = true)
     public List<Equipo> listar(boolean soloDisponibles) {

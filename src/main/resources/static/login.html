@@ -13,7 +13,7 @@
             <h1 class="h4 mb-1">Iniciar sesión</h1>
             <p class="text-body-secondary mb-3">Sistema de préstamo de equipos tecnológicos</p>
             <div id="mensaje" class="alert alert-danger" role="alert" hidden></div>
-            <form id="loginForm" novalidate>
+            <form id="loginForm" onsubmit="iniciarSesion(event)" novalidate>
                 <div class="mb-3">
                     <label for="username" class="form-label">Usuario</label>
                     <input id="username" name="username" class="form-control" autocomplete="username" required>
@@ -22,7 +22,7 @@
                     <label for="password" class="form-label">Contraseña</label>
                     <input id="password" name="password" type="password" class="form-control" autocomplete="current-password" required>
                 </div>
-                <button id="entrar" type="submit" class="btn btn-primary w-100">Entrar</button>
+                <button id="entrar" type="button" class="btn btn-primary w-100" onclick="iniciarSesion()">Entrar</button>
             </form>
             <hr class="my-3">
             <p class="text-center text-body-secondary small mb-2">¿No tienes una cuenta?</p>
@@ -39,22 +39,34 @@ fetch('/api/auth/me', { credentials: 'same-origin' })
     .catch(() => {});
 
 if (new URLSearchParams(window.location.search).has('registrado')) {
+    mostrarMensaje('Cuenta creada correctamente. Ya puedes iniciar sesión.', 'success');
+}
+
+function mostrarMensaje(texto, tipo = 'danger') {
     const mensaje = document.getElementById('mensaje');
-    mensaje.className = 'alert alert-success';
-    mensaje.textContent = 'Cuenta creada correctamente. Ya puedes iniciar sesión.';
+    mensaje.className = `alert alert-${tipo}`;
+    mensaje.textContent = texto;
     mensaje.hidden = false;
 }
 
-document.getElementById('loginForm').addEventListener('submit', async (evento) => {
-    evento.preventDefault();
-    const mensaje = document.getElementById('mensaje');
+async function iniciarSesion(evento) {
+    if (evento) evento.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
     const entrar = document.getElementById('entrar');
-    mensaje.className = 'alert alert-danger';
-    mensaje.hidden = true;
+    document.getElementById('mensaje').hidden = true;
+
+    if (!username || !password) {
+        mostrarMensaje('Debes ingresar el usuario y la contraseña.');
+        return;
+    }
+
     entrar.disabled = true;
     try {
-        // Token CSRF vigente (el login es una operación POST).
-        const csrf = await (await fetch('/api/auth/csrf', { credentials: 'same-origin' })).json();
+        const csrfRespuesta = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
+        const csrf = await csrfRespuesta.json();
+
         const respuesta = await fetch('/api/auth/login', {
             method: 'POST',
             credentials: 'same-origin',
@@ -62,25 +74,22 @@ document.getElementById('loginForm').addEventListener('submit', async (evento) =
                 'Content-Type': 'application/x-www-form-urlencoded',
                 [csrf.headerName]: csrf.token
             },
-            body: new URLSearchParams({
-                username: document.getElementById('username').value,
-                password: document.getElementById('password').value
-            })
+            body: new URLSearchParams({ username, password })
         });
+
         if (respuesta.ok) {
             window.location.replace('/');
             return;
         }
+
         const datos = await respuesta.json().catch(() => null);
-        mensaje.textContent = (datos && datos.error) ? datos.error : 'No se pudo iniciar sesión.';
-        mensaje.hidden = false;
+        mostrarMensaje((datos && datos.error) ? datos.error : 'No se pudo iniciar sesión.');
     } catch (error) {
-        mensaje.textContent = 'Error de conexión. Inténtalo de nuevo.';
-        mensaje.hidden = false;
+        mostrarMensaje('Error de conexión. Inténtalo de nuevo.');
     } finally {
         entrar.disabled = false;
     }
-});
+}
 </script>
 </body>
 </html>

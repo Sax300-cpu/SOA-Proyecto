@@ -3,6 +3,7 @@ package com.soa.proyecto.controller;
 import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.model.Prestamo;
 import com.soa.proyecto.service.DevolucionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -12,13 +13,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 public class DevolucionController {
 
     private final DevolucionService servicio;
-
-    public DevolucionController(DevolucionService servicio) {
-        this.servicio = servicio;
-    }
 
     @PutMapping("/api/prestamos/{id}/entregar")
     public Prestamo entregar(@PathVariable Long id, Authentication sesion) {

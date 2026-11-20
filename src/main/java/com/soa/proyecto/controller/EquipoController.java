@@ -3,6 +3,7 @@ package com.soa.proyecto.controller;
 import com.soa.proyecto.dto.EquipoRequest;
 import com.soa.proyecto.model.Equipo;
 import com.soa.proyecto.service.EquipoService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,12 +12,9 @@ import java.util.List;
 // Los permisos ADMIN/USUARIO y CSRF se aplican en SecurityConfig.
 @RestController
 @RequestMapping("/api/equipos")
+@RequiredArgsConstructor
 public class EquipoController {
     private final EquipoService servicio;
-
-    public EquipoController(EquipoService servicio) {
-        this.servicio = servicio;
-    }
 
     @GetMapping
     public List<Equipo> listar(@RequestParam(defaultValue = "false") boolean disponibles) {

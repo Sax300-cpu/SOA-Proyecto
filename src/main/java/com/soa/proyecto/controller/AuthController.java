@@ -4,6 +4,7 @@ import com.soa.proyecto.dto.UsuarioSesion;
 import com.soa.proyecto.model.Rol;
 import com.soa.proyecto.model.Usuario;
 import com.soa.proyecto.repository.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -20,15 +21,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public AuthController(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
-        this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @GetMapping("/csrf")
     public CsrfToken csrf(CsrfToken csrfToken) {

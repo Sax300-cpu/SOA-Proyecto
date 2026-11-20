@@ -70,9 +70,9 @@ public class AuthController {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "El usuario no debe tener espacios y admite hasta 30 caracteres."));
         }
-        if (password.length() < 6 || password.length() > 72) {
+        if (password.length() < 8 || password.length() > 72) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "La contraseña debe tener entre 6 y 72 caracteres."));
+                    .body(Map.of("error", "La contraseña debe tener entre 8 y 72 caracteres."));
         }
         if (usuarioRepository.existsByUsername(username)) {
             return ResponseEntity.status(HttpStatus.CONFLICT)

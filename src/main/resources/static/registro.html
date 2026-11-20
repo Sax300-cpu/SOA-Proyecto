@@ -25,8 +25,12 @@
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Contraseña</label>
-                    <input id="password" name="password" type="password" class="form-control" minlength="6" maxlength="72" autocomplete="new-password" required>
-                    <div class="form-text">Mínimo 6 caracteres.</div>
+                    <input id="password" name="password" type="password" class="form-control" minlength="8" maxlength="72" autocomplete="new-password" required>
+                    <div class="form-text">Mínimo 8 caracteres.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="confirmarPassword" class="form-label">Confirmar contraseña</label>
+                    <input id="confirmarPassword" name="confirmarPassword" type="password" class="form-control" minlength="8" maxlength="72" autocomplete="new-password" required>
                 </div>
                 <button id="registrar" type="button" class="btn btn-primary w-100" onclick="registrarUsuario()">Registrarse</button>
             </form>
@@ -56,10 +60,11 @@ async function registrarUsuario(evento) {
     const nombre = document.getElementById('nombre').value.trim();
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
+    const confirmarPassword = document.getElementById('confirmarPassword').value;
     const boton = document.getElementById('registrar');
     document.getElementById('mensaje').hidden = true;
 
-    if (!nombre || !username || !password) {
+    if (!nombre || !username || !password || !confirmarPassword) {
         mostrarError('Todos los campos son obligatorios.');
         return;
     }
@@ -67,8 +72,12 @@ async function registrarUsuario(evento) {
         mostrarError('El nombre de usuario no debe contener espacios.');
         return;
     }
-    if (password.length < 6) {
-        mostrarError('La contraseña debe tener al menos 6 caracteres.');
+    if (password.length < 8) {
+        mostrarError('La contraseña debe tener al menos 8 caracteres.');
+        return;
+    }
+    if (password !== confirmarPassword) {
+        mostrarError('Las contraseñas no coinciden.');
         return;
     }
 

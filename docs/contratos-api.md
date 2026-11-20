@@ -116,7 +116,7 @@ Sesión del navegador con Spring Security; sin JWT ni OAuth.
 
 - El cliente y la API viven en el mismo servidor; la cookie de sesión viaja sola.
 - `POST /api/auth/login` responde `200` con `{username, rol}` en éxito y `401` con `{error}` si falla.
-- `POST /api/auth/registro` responde `201` con `{username, nombre, rol}` (siempre `USUARIO`), `400` si faltan datos o no cumplen longitud, y `409` si el `username` ya existe.
+- `POST /api/auth/registro` responde `201` con `{username, nombre, rol}` (siempre `USUARIO`), `400` si faltan datos o la contraseña tiene menos de 8 caracteres, y `409` si el `username` ya existe.
 - `GET /api/auth/me` responde `{username, nombre, rol}` (sin contraseña) o `401`.
 - Las rutas de ADMIN rechazan a USUARIO con `403`.
 - CSRF: Spring Security envía la cookie `XSRF-TOKEN`; el cliente debe devolverla en el encabezado `X-XSRF-TOKEN` en POST/PUT/DELETE.

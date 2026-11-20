@@ -3,6 +3,7 @@ package com.soa.proyecto.security;
 import com.soa.proyecto.model.Rol;
 import com.soa.proyecto.model.Usuario;
 import com.soa.proyecto.repository.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -12,15 +13,11 @@ import org.springframework.stereotype.Component;
  * Las contraseñas se guardan encriptadas; solo son para desarrollo.
  */
 @Component
+@RequiredArgsConstructor
 public class DatosIniciales implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public DatosIniciales(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
-        this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @Override
     public void run(String... args) {

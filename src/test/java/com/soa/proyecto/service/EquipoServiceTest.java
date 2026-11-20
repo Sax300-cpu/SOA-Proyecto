@@ -59,7 +59,7 @@ class EquipoServiceTest {
     @Test
     void editarNoLiberaUnEquipoReservado() {
         Equipo ocupado = equipo(true, false);
-        when(repository.findByIdForUpdate(1L)).thenReturn(Optional.of(ocupado));
+        when(repository.findEquipoById(1L)).thenReturn(Optional.of(ocupado));
         when(repository.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
         Equipo editado = servicio.editar(1L, new EquipoRequest("Nuevo nombre", null));
         assertEquals(false, editado.getDisponible());
@@ -70,7 +70,7 @@ class EquipoServiceTest {
     @Test
     void desactivarConservaRegistroYDisponibilidadYEsRepetible() {
         Equipo ocupado = equipo(true, false);
-        when(repository.findByIdForUpdate(1L)).thenReturn(Optional.of(ocupado));
+        when(repository.findEquipoById(1L)).thenReturn(Optional.of(ocupado));
         when(repository.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
         servicio.desactivar(1L);
         servicio.desactivar(1L);
@@ -83,7 +83,7 @@ class EquipoServiceTest {
     @Test
     void inexistenteOInactivoDevuelve404() {
         when(repository.findById(1L)).thenReturn(Optional.of(equipo(false, true)));
-        when(repository.findByIdForUpdate(1L)).thenReturn(Optional.of(equipo(false, true)));
+        when(repository.findEquipoById(1L)).thenReturn(Optional.of(equipo(false, true)));
         assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class, () -> servicio.detalle(1L)).getStatusCode());
         assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class,
                 () -> servicio.editar(1L, new EquipoRequest("Laptop", null))).getStatusCode());

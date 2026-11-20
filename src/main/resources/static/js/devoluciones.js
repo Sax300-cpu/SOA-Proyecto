@@ -12,11 +12,10 @@
     }
 
     async function pedir(ruta, opciones = {}) {
-        const respuesta = await fetch(ruta, { credentials: 'same-origin', ...opciones });
+        const respuesta = await fetchConSesion(ruta, opciones);
         const datos = await respuesta.json().catch(() => null);
         if (!respuesta.ok) {
-            const error = respuesta.status === 401 ? 'Tu sesión terminó. Inicia sesión desde la página principal.'
-                : respuesta.status === 403 ? 'No tienes permiso o la sesión cambió. Vuelve a iniciar sesión y reintenta.'
+            const error = respuesta.status === 403 ? 'No tienes permiso o la sesión cambió. Vuelve a iniciar sesión y reintenta.'
                 : datos?.error || 'No se pudo completar la operación. Actualiza e inténtalo de nuevo.';
             throw new Error(error);
         }
@@ -129,10 +128,10 @@
 
     async function iniciar() {
         try {
-            const sesion = await pedir('/api/auth/me');
+            const sesion = await sesionActual;
+            if (!sesion) return;
             admin = sesion.rol === 'ADMIN';
             if (!admin && sesion.rol !== 'USUARIO') throw new Error('La cuenta no tiene un rol válido.');
-            porId('sesion').textContent = `${sesion.nombre} · ${sesion.rol}`;
             porId('titulo').textContent = admin ? 'Entregas, devoluciones e historial' : 'Mi historial de préstamos';
             porId('ayuda').textContent = admin
                 ? 'Entrega los préstamos aprobados y registra la devolución de los equipos recibidos.'
@@ -142,7 +141,6 @@
             porId('contenido').hidden = false;
             await cargar();
         } catch (error) {
-            porId('sesion').textContent = 'Sesión no disponible';
             mensaje(error.message, 'danger');
         }
     }

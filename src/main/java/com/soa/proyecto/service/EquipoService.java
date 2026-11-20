@@ -28,7 +28,7 @@ public class EquipoService {
 
     @Transactional(readOnly = true)
     public Equipo detalle(Long id) {
-        return exigirActivo(repository.findById(id).orElseThrow(this::noEncontrado));
+        return exigirActivo(repository.findById(id).orElseThrow(() -> noEncontrado()));
     }
 
     @Transactional
@@ -42,14 +42,14 @@ public class EquipoService {
 
     @Transactional
     public Equipo editar(Long id, EquipoRequest datos) {
-        Equipo equipo = exigirActivo(repository.findEquipoById(id).orElseThrow(this::noEncontrado));
+        Equipo equipo = exigirActivo(repository.findEquipoById(id).orElseThrow(() -> noEncontrado()));
         aplicarDatos(equipo, datos);
         return repository.save(equipo);
     }
 
     @Transactional
     public Equipo desactivar(Long id) {
-        Equipo equipo = repository.findEquipoById(id).orElseThrow(this::noEncontrado);
+        Equipo equipo = repository.findEquipoById(id).orElseThrow(() -> noEncontrado());
         equipo.setActivo(false);
         return repository.save(equipo);
     }

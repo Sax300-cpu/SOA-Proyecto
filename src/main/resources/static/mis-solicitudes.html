@@ -9,8 +9,9 @@
           integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvR9gXkI7JOGa2XVsw53Yke2bsdkBbjmmiX"
           crossorigin="anonymous">
 </head>
-<body>
-<main class="container py-5">
+<body class="bg-light">
+<header id="encabezado" class="bg-dark text-white py-3" data-rol="USUARIO"></header>
+<main class="container py-4">
     <h1 class="mb-4">Mis Solicitudes de Préstamo</h1>
 
     <a href="/equipos.html" class="btn btn-primary mb-4">Buscar equipos</a>
@@ -31,6 +32,7 @@
     </div>
 </main>
 
+<script src="/js/encabezado.js"></script>
 <script>
     const tablaHistorial = document.getElementById("tablaHistorial");
 
@@ -55,7 +57,7 @@
 
     async function cargarHistorial() {
         try {
-            const respuesta = await fetch("/api/prestamos/mios", { credentials: "same-origin" });
+            const respuesta = await fetchConSesion("/api/prestamos/mios");
             if (!respuesta.ok) {
                 throw new Error(await mensajeError(respuesta));
             }
@@ -90,7 +92,9 @@
         }
     }
 
-    cargarHistorial();
+    sesionActual.then(usuario => {
+        if (usuario) cargarHistorial();
+    });
 </script>
 </body>
 </html>

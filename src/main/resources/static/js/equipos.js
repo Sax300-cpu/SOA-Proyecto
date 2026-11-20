@@ -15,10 +15,7 @@ function mensaje(texto, tipo = 'danger') {
 }
 
 async function peticion(ruta, opciones = {}) {
-    const respuesta = await fetch(ruta, { credentials: 'same-origin', ...opciones });
-    if (respuesta.status === 401) {
-        throw new Error('La sesión no está activa. Inicia sesión y vuelve al catálogo.');
-    }
+    const respuesta = await fetchConSesion(ruta, opciones);
     const datos = await respuesta.json().catch(() => null);
     if (!respuesta.ok) {
         throw new Error(datos?.error || datos?.detail || datos?.message || `Error HTTP ${respuesta.status}`);
@@ -53,14 +50,14 @@ function celda(fila, texto) {
 async function accion(tarea) {
     if (ocupado) return;
     ocupado = true;
-    document.querySelectorAll('button').forEach(boton => { boton.disabled = true; });
+    document.querySelectorAll('main button').forEach(boton => { boton.disabled = true; });
     try {
         await tarea();
     } catch (error) {
         mensaje(error.message);
     } finally {
         ocupado = false;
-        document.querySelectorAll('button').forEach(boton => { boton.disabled = false; });
+        document.querySelectorAll('main button').forEach(boton => { boton.disabled = false; });
     }
 }
 
@@ -179,23 +176,15 @@ elemento('formEquipo').addEventListener('submit', evento => {
 elemento('cancelar').addEventListener('click', cancelarEdicion);
 elemento('actualizar').addEventListener('click', () => accion(cargar));
 elemento('disponibles').addEventListener('change', () => accion(cargar));
-elemento('salir').addEventListener('click', () => accion(async () => {
-    await escribir('/api/auth/logout', 'POST');
-    window.location.assign('/');
-}));
-
 async function iniciar() {
     try {
-        const sesion = await peticion('/api/auth/me');
+        const sesion = await sesionActual;
+        if (!sesion) return;
         administrador = sesion.rol === 'ADMIN';
-        elemento('sesion').textContent = `${sesion.username} · ${sesion.rol}`;
         elemento('administracion').hidden = !administrador;
         elemento('columnaId').hidden = !administrador;
-        elemento('solicitudes').hidden = administrador;
-        elemento('aprobaciones').hidden = !administrador;
         elemento('disponibles').checked = !administrador;
         elemento('actualizar').disabled = false;
-        elemento('salir').disabled = false;
         await cargar();
     } catch (error) {
         elemento('equipos').replaceChildren();

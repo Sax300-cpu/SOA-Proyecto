@@ -1,5 +1,6 @@
 package com.soa.proyecto.controller;
 
+import com.soa.proyecto.dto.DevolucionPeticion;
 import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.model.Prestamo;
 import com.soa.proyecto.service.DevolucionService;
@@ -56,6 +57,4 @@ public class DevolucionController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para esta operación");
         }
     }
-
-    public record DevolucionPeticion(String observacion) { }
 }

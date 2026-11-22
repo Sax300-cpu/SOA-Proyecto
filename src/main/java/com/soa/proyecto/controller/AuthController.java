@@ -1,5 +1,6 @@
 package com.soa.proyecto.controller;
 
+import com.soa.proyecto.dto.RegistroPeticion;
 import com.soa.proyecto.dto.UsuarioSesion;
 import com.soa.proyecto.model.Rol;
 import com.soa.proyecto.model.Usuario;
@@ -88,8 +89,5 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new UsuarioSesion(nuevo.getUsername(), nuevo.getNombre(), nuevo.getRol()));
-    }
-
-    public record RegistroPeticion(String nombre, String username, String password) {
     }
 }

@@ -25,12 +25,12 @@
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Contraseña</label>
-                    <input id="password" name="password" type="password" class="form-control" minlength="8" maxlength="72" autocomplete="new-password" required>
-                    <div class="form-text">Mínimo 8 caracteres.</div>
+                    <input id="password" name="password" type="password" class="form-control" minlength="8" autocomplete="new-password" required>
+                    <div class="form-text">Mínimo 8 caracteres y máximo 72 bytes en UTF-8.</div>
                 </div>
                 <div class="mb-3">
                     <label for="confirmarPassword" class="form-label">Confirmar contraseña</label>
-                    <input id="confirmarPassword" name="confirmarPassword" type="password" class="form-control" minlength="8" maxlength="72" autocomplete="new-password" required>
+                    <input id="confirmarPassword" name="confirmarPassword" type="password" class="form-control" minlength="8" autocomplete="new-password" required>
                 </div>
                 <button id="registrar" type="button" class="btn btn-primary w-100" onclick="registrarUsuario()">Registrarse</button>
             </form>
@@ -74,6 +74,10 @@ async function registrarUsuario(evento) {
     }
     if (password.length < 8) {
         mostrarError('La contraseña debe tener al menos 8 caracteres.');
+        return;
+    }
+    if (new TextEncoder().encode(password).length > 72) {
+        mostrarError('La contraseña no puede superar 72 bytes en UTF-8.');
         return;
     }
     if (password !== confirmarPassword) {

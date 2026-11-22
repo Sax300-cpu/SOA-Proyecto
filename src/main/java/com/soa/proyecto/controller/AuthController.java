@@ -6,6 +6,7 @@ import com.soa.proyecto.model.Rol;
 import com.soa.proyecto.model.Usuario;
 import com.soa.proyecto.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 // Endpoints públicos de sesión: token CSRF, usuario actual (/me) y registro.
@@ -71,13 +73,16 @@ public class AuthController {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "El usuario no debe tener espacios y admite hasta 30 caracteres."));
         }
-        if (password.length() < 8 || password.length() > 72) {
+        if (password.length() < 8) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "La contraseña debe tener entre 8 y 72 caracteres."));
+                    .body(Map.of("error", "La contraseña debe tener al menos 8 caracteres."));
+        }
+        if (password.getBytes(StandardCharsets.UTF_8).length > 72) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "La contraseña no puede superar 72 bytes en UTF-8."));
         }
         if (usuarioRepository.existsByUsername(username)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Ese nombre de usuario ya está registrado."));
+            return usuarioDuplicado();
         }
 
         Usuario nuevo = new Usuario();
@@ -85,9 +90,22 @@ public class AuthController {
         nuevo.setUsername(username);
         nuevo.setPassword(passwordEncoder.encode(password));
         nuevo.setRol(Rol.USUARIO);
-        usuarioRepository.save(nuevo);
+        try {
+            usuarioRepository.save(nuevo);
+        } catch (DataIntegrityViolationException error) {
+            // Otra solicitud pudo crear la cuenta después de la comprobación inicial.
+            if (usuarioRepository.existsByUsername(username)) {
+                return usuarioDuplicado();
+            }
+            throw error;
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new UsuarioSesion(nuevo.getUsername(), nuevo.getNombre(), nuevo.getRol()));
+    }
+
+    private ResponseEntity<Map<String, String>> usuarioDuplicado() {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "Ese nombre de usuario ya está registrado."));
     }
 }

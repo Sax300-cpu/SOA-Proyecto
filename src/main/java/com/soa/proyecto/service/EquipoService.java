@@ -3,6 +3,7 @@ package com.soa.proyecto.service;
 import com.soa.proyecto.dto.EquipoRequest;
 import com.soa.proyecto.model.Equipo;
 import com.soa.proyecto.repository.EquipoRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,13 +11,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+// Reglas de negocio del catálogo: listar, crear, editar y desactivar equipos sin borrar historial.
 @Service
+@RequiredArgsConstructor
 public class EquipoService {
     private final EquipoRepository repository;
-
-    public EquipoService(EquipoRepository repository) {
-        this.repository = repository;
-    }
 
     @Transactional(readOnly = true)
     public List<Equipo> listar(boolean soloDisponibles) {
@@ -28,7 +27,7 @@ public class EquipoService {
 
     @Transactional(readOnly = true)
     public Equipo detalle(Long id) {
-        return exigirActivo(repository.findById(id).orElseThrow(this::noEncontrado));
+        return exigirActivo(repository.findById(id).orElseThrow(() -> noEncontrado()));
     }
 
     @Transactional
@@ -42,14 +41,14 @@ public class EquipoService {
 
     @Transactional
     public Equipo editar(Long id, EquipoRequest datos) {
-        Equipo equipo = exigirActivo(repository.findByIdForUpdate(id).orElseThrow(this::noEncontrado));
+        Equipo equipo = exigirActivo(repository.findEquipoById(id).orElseThrow(() -> noEncontrado()));
         aplicarDatos(equipo, datos);
         return repository.save(equipo);
     }
 
     @Transactional
     public Equipo desactivar(Long id) {
-        Equipo equipo = repository.findByIdForUpdate(id).orElseThrow(this::noEncontrado);
+        Equipo equipo = repository.findEquipoById(id).orElseThrow(() -> noEncontrado());
         equipo.setActivo(false);
         return repository.save(equipo);
     }

@@ -6,29 +6,16 @@
     <title>Mis Solicitudes de Préstamo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/css/bootstrap.min.css"
           rel="stylesheet"
-          integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvI7KJOGa2XVsw53Yke2bsdkBbjmmiX"
+          integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvR9gXkI7JOGa2XVsw53Yke2bsdkBbjmmiX"
           crossorigin="anonymous">
 </head>
-<body>
-<main class="container py-5">
+<body class="bg-light">
+<header id="encabezado" class="bg-dark text-white py-3" data-rol="USUARIO"></header>
+<main class="container py-4">
     <h1 class="mb-4">Mis Solicitudes de Préstamo</h1>
 
-    <form id="formSolicitud" class="row g-3 mb-5">
-        <div class="col-md-4">
-            <label for="usuarioId" class="form-label">Usuario ID</label>
-            <input id="usuarioId" name="usuarioId" type="number" min="1" class="form-control">
-            <div class="form-text">El backend identifica al usuario mediante la sesión.</div>
-        </div>
-        <div class="col-md-4">
-            <label for="equipoId" class="form-label">Equipo ID</label>
-            <input id="equipoId" name="equipoId" type="number" min="1" required class="form-control">
-        </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Solicitar Equipo</button>
-        </div>
-    </form>
-
-    <h2 class="h4 mb-3">Historial</h2>
+    <a href="/equipos.html" class="btn btn-primary mb-4">Buscar equipos</a>
+    <div id="errorHistorial" class="alert alert-danger" role="alert" hidden></div>
     <div class="table-responsive">
         <table class="table table-striped table-bordered align-middle">
             <thead class="table-dark">
@@ -45,23 +32,9 @@
     </div>
 </main>
 
+<script src="/js/encabezado.js"></script>
 <script>
-    const formSolicitud = document.getElementById("formSolicitud");
     const tablaHistorial = document.getElementById("tablaHistorial");
-
-    function obtenerTokenCsrf() {
-        const cookie = document.cookie
-            .split("; ")
-            .find((parte) => parte.startsWith("XSRF-TOKEN="));
-        return cookie ? decodeURIComponent(cookie.substring("XSRF-TOKEN=".length)) : null;
-    }
-
-    async function prepararCsrf() {
-        const respuesta = await fetch("/api/auth/csrf", { credentials: "same-origin" });
-        if (!respuesta.ok) {
-            throw new Error("No se pudo preparar la protección CSRF.");
-        }
-    }
 
     async function mensajeError(respuesta) {
         const texto = await respuesta.text();
@@ -84,7 +57,7 @@
 
     async function cargarHistorial() {
         try {
-            const respuesta = await fetch("/api/prestamos/mios", { credentials: "same-origin" });
+            const respuesta = await fetchConSesion("/api/prestamos/mios");
             if (!respuesta.ok) {
                 throw new Error(await mensajeError(respuesta));
             }
@@ -113,47 +86,15 @@
                 tablaHistorial.appendChild(fila);
             });
         } catch (error) {
-            alert(`No se pudo cargar el historial: ${error.message}`);
+            const aviso = document.getElementById("errorHistorial");
+            aviso.textContent = "No se pudo cargar el historial: " + error.message;
+            aviso.hidden = false;
         }
     }
 
-    formSolicitud.addEventListener("submit", async (evento) => {
-        evento.preventDefault();
-        const tokenCsrf = obtenerTokenCsrf();
-
-        try {
-            if (!tokenCsrf) {
-                await prepararCsrf();
-            }
-            const token = obtenerTokenCsrf();
-            if (!token) {
-                throw new Error("No se recibió el token CSRF.");
-            }
-
-            const equipoId = Number(document.getElementById("equipoId").value);
-            const respuesta = await fetch("/api/prestamos", {
-                method: "POST",
-                credentials: "same-origin",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-XSRF-TOKEN": token
-                },
-                body: JSON.stringify({ equipoId })
-            });
-
-            if (!respuesta.ok) {
-                throw new Error(await mensajeError(respuesta));
-            }
-
-            alert("Solicitud creada correctamente.");
-            formSolicitud.reset();
-            await cargarHistorial();
-        } catch (error) {
-            alert(`No se pudo crear la solicitud: ${error.message}`);
-        }
+    sesionActual.then(usuario => {
+        if (usuario) cargarHistorial();
     });
-
-    cargarHistorial();
 </script>
 </body>
 </html>

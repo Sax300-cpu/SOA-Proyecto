@@ -7,6 +7,7 @@ import com.soa.proyecto.model.Usuario;
 import com.soa.proyecto.repository.EquipoRepository;
 import com.soa.proyecto.repository.PrestamoRepository;
 import com.soa.proyecto.repository.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,32 +16,25 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// Reglas de negocio de solicitudes: crear, aprobar (bloquea disponibilidad) y rechazar.
 @Service
+@RequiredArgsConstructor
 public class PrestamoService {
 
     private final PrestamoRepository prestamoRepository;
     private final UsuarioRepository usuarioRepository;
     private final EquipoRepository equipoRepository;
 
-    public PrestamoService(
-            PrestamoRepository prestamoRepository,
-            UsuarioRepository usuarioRepository,
-            EquipoRepository equipoRepository) {
-        this.prestamoRepository = prestamoRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.equipoRepository = equipoRepository;
-    }
-
     @Transactional
     public Prestamo crearSolicitud(String username, Long equipoId) {
-        if (equipoId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipoId es obligatorio");
+        if (equipoId == null || equipoId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El identificador del equipo debe ser un número positivo");
         }
 
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
         Equipo equipo = equipoRepository.findById(equipoId)
-                .orElseThrow(EquipoNoDisponibleException::new);
+                .orElseThrow(() -> new EquipoNoDisponibleException());
 
         if (!Boolean.TRUE.equals(equipo.getActivo()) || !Boolean.TRUE.equals(equipo.getDisponible())) {
             throw new EquipoNoDisponibleException();
@@ -70,10 +64,10 @@ public class PrestamoService {
     public Prestamo aprobar(Long id) {
         Prestamo prestamo = buscarSolicitudPendiente(id);
 
-        Equipo equipo = equipoRepository.findByIdForUpdate(prestamo.getEquipoId())
+        Equipo equipo = equipoRepository.findEquipoById(prestamo.getEquipoId())
                 .filter(e -> Boolean.TRUE.equals(e.getActivo())
                         && Boolean.TRUE.equals(e.getDisponible()))
-                .orElseThrow(EquipoNoDisponibleException::new);
+                .orElseThrow(() -> new EquipoNoDisponibleException());
 
         equipo.setDisponible(false);
         equipoRepository.save(equipo);

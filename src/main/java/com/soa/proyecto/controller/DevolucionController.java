@@ -1,8 +1,10 @@
 package com.soa.proyecto.controller;
 
+import com.soa.proyecto.dto.DevolucionPeticion;
 import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.model.Prestamo;
 import com.soa.proyecto.service.DevolucionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -11,14 +13,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+// Endpoints REST para registrar entregas, devoluciones y consultar el historial.
 @RestController
+@RequiredArgsConstructor
 public class DevolucionController {
 
     private final DevolucionService servicio;
-
-    public DevolucionController(DevolucionService servicio) {
-        this.servicio = servicio;
-    }
 
     @PutMapping("/api/prestamos/{id}/entregar")
     public Prestamo entregar(@PathVariable Long id, Authentication sesion) {
@@ -57,6 +57,4 @@ public class DevolucionController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para esta operación");
         }
     }
-
-    public record DevolucionPeticion(String observacion) { }
 }

@@ -1,5 +1,6 @@
 package com.soa.proyecto.controller;
 
+import com.soa.proyecto.dto.DevolucionPeticion;
 import com.soa.proyecto.service.DevolucionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -53,7 +54,7 @@ class DevolucionControllerTest {
 
     @Test
     void devuelveConObservacionYPropioNoRecibeIdDelCliente() {
-        controller.devolver(1L, new DevolucionController.DevolucionPeticion("Rayón"), sesion("ADMIN"));
+        controller.devolver(1L, new DevolucionPeticion("Rayón"), sesion("ADMIN"));
         controller.historialPropio(null, sesion("USUARIO"));
         verify(servicio).devolver(1L, "Rayón");
         verify(servicio).historialPropio("emilio", null);

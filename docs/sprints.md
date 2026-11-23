@@ -84,6 +84,22 @@ Antes de programar en paralelo, el grupo debe dejar claros estos puntos:
 - Probar el recorrido completo: iniciar sesión como usuario, solicitar equipo, iniciar sesión como administrador, aprobar, entregar, devolver y revisar historial.
 - **Criterio de salida:** el recorrido funciona sin intervención manual en la base de datos.
 
+## 6 bis. Mejoras de interfaz y reglas (rama `feature/mejoras-interfaz`)
+
+**Estado:** hecho y subido a la rama `feature/mejoras-interfaz` para que el grupo lo pruebe. **No está en `develop`.** El detalle, los pasos de prueba y las decisiones abiertas están en [plan-mejoras-equipo.md](plan-mejoras-equipo.md).
+
+| Tarea | Estado | Responsable de revisar |
+|---|---|---|
+| Estilo compartido, escudo FISEI y paleta | Hecho | Todos |
+| Panel de inicio por rol (resumen + aprobar/rechazar) | Hecho | Luis, Kevin |
+| Catálogo con modal y código de equipo (`LAP-001`) | Hecho | Manolo |
+| Historial más limpio y badges de estado | Hecho | Emilio |
+| Corregir solicitudes duplicadas del mismo usuario | Pendiente | Luis |
+| Límite de solicitudes activas por usuario | Pendiente (decidir número) | Luis |
+| Plazo de devolución y estado «Vencido» (sin multas) | Pendiente (decidir días) | Luis, Emilio |
+
+**Criterio de salida:** el grupo prueba la rama con la lista de comprobación del plan, acuerda las decisiones pendientes y se fusiona en `develop` con pull request.
+
 ## 7. Cierre y entrega (26–27 nov)
 
 - Corregir fallas detectadas en Sprint 2.

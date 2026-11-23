@@ -8,66 +8,47 @@
           rel="stylesheet"
           integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvR9gXkI7JOGa2XVsw53Yke2bsdkBbjmmiX"
           crossorigin="anonymous">
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+          <link href="/css/estilo.css" rel="stylesheet">
 </head>
 <body class="bg-body-tertiary">
 <header id="encabezado" class="bg-dark text-white py-3"></header>
 <main class="container py-4">
-    <h1 class="mb-4">Catálogo de equipos</h1>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h1 class="mb-0">Catálogo de equipos</h1>
+        <button id="abrirRegistro" type="button" class="btn btn-primary" hidden>
+            <i class="bi bi-plus-lg me-1"></i>Registrar equipo
+        </button>
+    </div>
     <div id="mensaje" role="status" aria-live="polite" hidden></div>
 
-    <section id="administracion" class="card mb-4" hidden aria-labelledby="tituloFormulario">
-        <div class="card-body">
-            <h2 id="tituloFormulario" class="h4">Registrar equipo</h2>
-            <form id="formEquipo" class="row g-3">
-                <div class="col-md-5">
-                    <label for="nombre" class="form-label">Nombre</label>
-                    <input id="nombre" class="form-control" maxlength="50" required>
-                </div>
-                <div class="col-md-7">
-                    <label for="descripcion" class="form-label">Descripción breve (opcional)</label>
-                    <textarea id="descripcion" class="form-control" maxlength="200" rows="2"></textarea>
-                </div>
-                <div class="col-12 d-flex gap-2">
-                    <button id="guardar" type="submit" class="btn btn-primary">Registrar</button>
-                    <button id="cancelar" type="button" class="btn btn-outline-secondary" hidden>Cancelar edición</button>
-                </div>
-                <p class="text-body-secondary mb-0">
-                    Los equipos nuevos quedan disponibles. Los préstamos controlan su disponibilidad.
-                </p>
-            </form>
-        </div>
-    </section>
-
     <section aria-labelledby="tituloListado">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-            <h2 id="tituloListado" class="h4 mb-0">Equipos activos</h2>
-            <div class="d-flex gap-3 align-items-center">
-                <div class="form-check">
-                    <input id="disponibles" type="checkbox" class="form-check-input">
-                    <label for="disponibles" class="form-check-label">Solo disponibles</label>
-                </div>
-                <button id="actualizar" type="button" class="btn btn-outline-secondary" disabled>Actualizar</button>
+        <form id="busqueda" class="barra-filtros d-flex flex-wrap align-items-center gap-3 mb-3" role="search" aria-label="Buscar y filtrar equipos">
+            <label for="textoBusqueda" class="visually-hidden">Código, nombre o descripción del equipo</label>
+            <div class="input-group flex-grow-1 campo-busqueda">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input id="textoBusqueda" type="search" class="form-control" placeholder="Buscar por código, nombre o descripción">
             </div>
-        </div>
-
-        <form id="busqueda" class="d-flex gap-2 mb-3" role="search" aria-label="Buscar equipos">
-            <label for="textoBusqueda" class="visually-hidden">Nombre o descripción del equipo</label>
-            <input id="textoBusqueda" type="search" class="form-control" placeholder="Nombre o descripción del equipo">
-            <button type="submit" class="btn btn-outline-primary">
-                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <circle cx="7" cy="7" r="4.5"/>
-                    <path d="m10.5 10.5 3.5 3.5"/>
-                </svg>
-                Buscar
-            </button>
+            <div class="form-check form-switch mb-0">
+                <input id="disponibles" type="checkbox" role="switch" class="form-check-input">
+                <label for="disponibles" class="form-check-label">Solo disponibles</label>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+                <button id="actualizar" type="button" class="btn btn-outline-secondary" title="Actualizar listado" aria-label="Actualizar listado" disabled>
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
         </form>
 
+        <h2 id="tituloListado" class="h6 text-body-secondary mb-2">Equipos activos · <span id="contador"></span></h2>
+
         <div class="table-responsive bg-white">
-            <table class="table table-striped align-middle mb-0">
+            <table class="table table-hover align-middle mb-0">
                 <caption>La disponibilidad puede cambiar cuando se aprueba una solicitud.</caption>
                 <thead class="table-dark">
                 <tr>
-                    <th id="columnaId" scope="col" hidden>ID</th>
+                    <th scope="col">Código</th>
                     <th scope="col">Nombre</th>
                     <th scope="col">Descripción</th>
                     <th scope="col">Disponibilidad</th>
@@ -76,14 +57,39 @@
                 </thead>
                 <tbody id="equipos">
                 <tr>
-                    <td colspan="4">Cargando equipos…</td>
+                    <td colspan="5">Cargando equipos…</td>
                 </tr>
                 </tbody>
             </table>
         </div>
     </section>
 
-    <dialog id="solicitar" class="border rounded p-4" aria-labelledby="tituloSolicitud">
+    <dialog id="modalEquipo" class="modal-dialogo" aria-labelledby="tituloFormulario">
+        <form id="formEquipo" novalidate>
+            <h2 id="tituloFormulario" class="h4 mb-3">Registrar equipo</h2>
+            <div class="mb-3">
+                <label for="codigo" class="form-label">Código de inventario</label>
+                <input id="codigo" class="form-control text-uppercase" maxlength="10" placeholder="Ej. LAP-001" autocomplete="off" required>
+                <div class="form-text">Etiqueta única del equipo físico. Formato: letras, guion y número (LAP-001, PRO-002).</div>
+            </div>
+            <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre</label>
+                <input id="nombre" class="form-control" maxlength="50" placeholder="Ej. Laptop HP ProBook" required>
+            </div>
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripción breve (opcional)</label>
+                <textarea id="descripcion" class="form-control" maxlength="200" rows="2"></textarea>
+            </div>
+            <p id="errorEquipo" class="alert alert-danger py-2" role="alert" hidden></p>
+            <p class="text-body-secondary small">Los equipos nuevos quedan disponibles. Los préstamos controlan su disponibilidad.</p>
+            <div class="d-flex flex-wrap justify-content-end gap-2">
+                <button id="cancelar" type="button" class="btn btn-outline-secondary">Cancelar</button>
+                <button id="guardar" type="submit" class="btn btn-primary">Registrar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="solicitar" class="modal-dialogo" aria-labelledby="tituloSolicitud">
         <form id="formSolicitar">
             <h2 id="tituloSolicitud" class="h4">Confirmar solicitud</h2>
             <p id="equipoSolicitud" class="fw-bold mb-1"></p>

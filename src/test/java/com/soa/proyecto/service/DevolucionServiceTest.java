@@ -35,7 +35,7 @@ class DevolucionServiceTest {
         prestamo.setEquipoId(3L);
         prestamo.setEstado(EstadoPrestamo.APROBADO);
         prestamo.setFechaSolicitud(LocalDateTime.of(2026, 11, 16, 10, 0));
-        equipo = new Equipo(3L, "Laptop", "", false, true);
+        equipo = new Equipo(3L, "LAP-003", "Laptop", "", false, true);
         when(prestamos.findById(1L)).thenReturn(Optional.of(prestamo));
         when(equipos.findById(3L)).thenReturn(Optional.of(equipo));
         when(prestamos.save(any(Prestamo.class))).thenAnswer(i -> i.getArgument(0));

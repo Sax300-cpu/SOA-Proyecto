@@ -22,9 +22,10 @@ El ADMIN puede registrar, editar y desactivar. El USUARIO ve por defecto solo di
 Cuerpo de alta/edición:
 
 ```json
-{"nombre":"Proyector","descripcion":"Para aulas"}
+{"codigo":"PRO-001","nombre":"Proyector","descripcion":"Para aulas"}
 ```
 
+- Código obligatorio y único, con formato `LETRAS-NÚMEROS` (2 a 5 letras, guion y 1 a 4 dígitos, ej. `LAP-001`); se guarda en mayúsculas. Un código como `KSDKAKDKASKAKD` o `LAP001` responde 400. Si ya existe en otro equipo responde 409. Los equipos antiguos sin código deben recibir uno al editarlos.
 - Nombre obligatorio, no solo espacios, máximo 50 caracteres después de quitar espacios externos.
 - Descripción opcional, máximo 200 caracteres después de quitar espacios externos.
 - Alta establece `activo=true` y `disponible=true`. El cliente no puede cambiar ID, activo ni disponibilidad en alta/edición.
@@ -34,14 +35,14 @@ Cuerpo de alta/edición:
 - No existe borrado físico ni reactivación en este alcance.
 - Edición y desactivación reutilizan `findByIdForUpdate` dentro de una transacción, como los módulos de préstamos.
 - Seguridad y CSRF quedan en la configuración existente. El cliente obtiene un token nuevo de `/api/auth/csrf` antes de cada escritura.
-- Errores JSON con `error`: 400 datos inválidos; 401 sin sesión; 403 sin permiso/CSRF; 404 inexistente o inactivo.
+- Errores JSON con `error`: 400 datos inválidos; 401 sin sesión; 403 sin permiso/CSRF; 404 inexistente o inactivo; 409 código repetido.
 
 ## Comprobación manual
 
 Con JDK 25, MySQL 8 y una sesión iniciada mediante la API existente:
 
-1. Como ADMIN, abrir `/equipos.html`, registrar un equipo, editar su nombre y comprobar el resultado al actualizar.
-2. Intentar nombre vacío, más de 50 caracteres y descripción de más de 200. La API debe responder 400, aunque se omitan las validaciones del navegador.
+1. Como ADMIN, abrir `/equipos.html`, registrar un equipo (botón «Registrar equipo», abre un modal con código, nombre y descripción), editar su nombre y comprobar el resultado al actualizar.
+2. Intentar un código repetido (409), código vacío o con espacios (400), nombre vacío, más de 50 caracteres y descripción de más de 200. La API debe responder 400, aunque se omitan las validaciones del navegador.
 3. Como USUARIO, comprobar que no se muestra el formulario administrativo y que el listado inicial solo contiene disponibles. Intentar escrituras directamente: 403.
 4. Solicitar el equipo, aprobarlo como ADMIN y actualizar el catálogo. Debe quedar no disponible. Editar su nombre no debe liberarlo.
 5. Entregar, desactivar y devolver. Debe conservarse el préstamo en el historial y el equipo debe seguir fuera del catálogo.

@@ -10,13 +10,44 @@ async function fetchConSesion(ruta, opciones = {}) {
     return respuesta;
 }
 
+// Devuelve un <span> tipo badge con color según el estado del préstamo.
+function etiquetaEstado(estado) {
+    const colores = {
+        SOLICITADO: 'text-bg-warning',
+        APROBADO: 'text-bg-info',
+        ENTREGADO: 'text-bg-primary',
+        DEVUELTO: 'text-bg-success',
+        RECHAZADO: 'text-bg-danger'
+    };
+    const etiqueta = document.createElement('span');
+    etiqueta.className = `badge rounded-pill ${colores[estado] || 'text-bg-secondary'}`;
+    etiqueta.textContent = estado ?? '—';
+    return etiqueta;
+}
+
+// Carga el catálogo una vez y devuelve una función id -> "CÓDIGO · Nombre" (o "#id" si no está activo).
+async function cargarNombresEquipos() {
+    const nombres = new Map();
+    try {
+        const respuesta = await fetch('/api/equipos?disponibles=false', { credentials: 'same-origin' });
+        if (respuesta.ok) {
+            for (const equipo of await respuesta.json()) {
+                nombres.set(equipo.id, equipo.codigo ? `${equipo.codigo} · ${equipo.nombre}` : equipo.nombre);
+            }
+        }
+    } catch {
+        // Si falla, se muestra el id como respaldo.
+    }
+    return id => nombres.get(id) ?? `#${id}`;
+}
+
 // Dibuja la barra compartida, verifica /api/auth/me, filtra enlaces por rol y conecta el logout.
 async function iniciarEncabezado() {
     const encabezado = document.getElementById('encabezado');
     encabezado.innerHTML = `
         <div class="container">
             <nav class="d-flex flex-wrap gap-3 align-items-center justify-content-between" aria-label="Navegación principal">
-                <a class="text-white text-decoration-none fw-bold" href="/">Préstamo de equipos</a>
+                <a class="text-white text-decoration-none fw-bold" href="/"><img src="/img/logo-uta-circulo.png" alt="" class="logo-encabezado">Préstamo de equipos</a>
                 <div id="enlacesEncabezado" class="flex-wrap align-items-center gap-2" hidden>
                     <a class="btn btn-sm btn-outline-light" href="/">Inicio</a>
                     <a class="btn btn-sm btn-outline-light" href="/equipos.html">Catálogo</a>

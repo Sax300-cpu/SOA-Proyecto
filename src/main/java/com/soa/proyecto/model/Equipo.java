@@ -17,6 +17,10 @@ public class Equipo {
     @Column(name = "equId")
     private Long id;
 
+    // Código de inventario legible (ej. LAP-001). Único; puede ser nulo solo en equipos antiguos.
+    @Column(name = "equCodigo", length = 30, unique = true)
+    private String codigo;
+
     @Column(name = "equNombre", length = 50, nullable = false)
     private String nombre;
 

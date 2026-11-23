@@ -32,12 +32,23 @@ async function escribir(ruta, metodo, datos) {
     });
 }
 
-function cancelarEdicion() {
-    editando = null;
+// Abre el modal para registrar (equipo = null) o para editar un equipo existente.
+function abrirModalEquipo(equipo = null) {
+    editando = equipo ? equipo.id : null;
     elemento('formEquipo').reset();
-    elemento('tituloFormulario').textContent = 'Registrar equipo';
-    elemento('guardar').textContent = 'Registrar';
-    elemento('cancelar').hidden = true;
+    elemento('codigo').value = equipo?.codigo ?? '';
+    elemento('nombre').value = equipo?.nombre ?? '';
+    elemento('descripcion').value = equipo?.descripcion ?? '';
+    elemento('tituloFormulario').textContent = equipo ? `Editar equipo ${equipo.codigo ?? '#' + equipo.id}` : 'Registrar equipo';
+    elemento('guardar').textContent = equipo ? 'Guardar cambios' : 'Registrar';
+    elemento('errorEquipo').hidden = true;
+    elemento('modalEquipo').showModal();
+    elemento('codigo').focus();
+}
+
+function cerrarModalEquipo() {
+    editando = null;
+    elemento('modalEquipo').close();
 }
 
 function celda(fila, texto) {
@@ -73,34 +84,30 @@ function normalizar(texto) {
 
 function mostrarEquipos() {
     const resultados = equipos.filter(equipo =>
-        normalizar(`${equipo.nombre} ${equipo.descripcion ?? ''}`).includes(busqueda));
+        normalizar(`${equipo.codigo ?? ''} ${equipo.nombre} ${equipo.descripcion ?? ''}`).includes(busqueda));
     const tabla = elemento('equipos');
     tabla.replaceChildren();
+    elemento('contador').textContent = `${resultados.length} ${resultados.length === 1 ? 'equipo' : 'equipos'}`;
     if (resultados.length === 0) {
         const fila = document.createElement('tr');
-        celda(fila, 'No hay equipos que coincidan con el filtro.').colSpan = administrador ? 5 : 4;
+        celda(fila, 'No hay equipos que coincidan con el filtro.').colSpan = 5;
         tabla.append(fila);
     }
     resultados.forEach(equipo => {
         const fila = document.createElement('tr');
-        if (administrador) celda(fila, equipo.id);
+        celda(fila, equipo.codigo);
         celda(fila, equipo.nombre);
         celda(fila, equipo.descripcion);
-        celda(fila, equipo.disponible ? 'Disponible' : 'No disponible');
+        const estadoEquipo = document.createElement('span');
+        estadoEquipo.className = `badge rounded-pill ${equipo.disponible ? 'text-bg-success' : 'text-bg-secondary'}`;
+        estadoEquipo.textContent = equipo.disponible ? 'Disponible' : 'No disponible';
+        celda(fila, '').replaceChildren(estadoEquipo);
         const acciones = celda(fila, '');
         if (administrador) {
             const editar = document.createElement('button');
             editar.className = 'btn btn-sm btn-outline-primary me-2';
             editar.textContent = 'Editar';
-            editar.addEventListener('click', () => {
-                editando = equipo.id;
-                elemento('nombre').value = equipo.nombre;
-                elemento('descripcion').value = equipo.descripcion ?? '';
-                elemento('tituloFormulario').textContent = `Editar equipo #${equipo.id}`;
-                elemento('guardar').textContent = 'Guardar cambios';
-                elemento('cancelar').hidden = false;
-                elemento('nombre').focus();
-            });
+            editar.addEventListener('click', () => abrirModalEquipo(equipo));
             const desactivar = document.createElement('button');
             desactivar.className = 'btn btn-sm btn-outline-danger';
             desactivar.textContent = 'Desactivar';
@@ -108,7 +115,6 @@ function mostrarEquipos() {
                 if (!confirm(`¿Desactivar «${equipo.nombre}»? Se conservará su historial.`)) return;
                 accion(async () => {
                     await escribir(`/api/equipos/${equipo.id}/desactivar`, 'PUT');
-                    if (editando === equipo.id) cancelarEdicion();
                     await cargar();
                     mensaje('Equipo desactivado. Se conservó su historial.', 'success');
                 });
@@ -122,7 +128,7 @@ function mostrarEquipos() {
             solicitar.setAttribute('aria-label', `Solicitar equipo ${equipo.nombre}`);
             solicitar.addEventListener('click', () => {
                 equipoElegido = equipo;
-                elemento('equipoSolicitud').textContent = equipo.nombre;
+                elemento('equipoSolicitud').textContent = equipo.codigo ? `${equipo.codigo} · ${equipo.nombre}` : equipo.nombre;
                 elemento('descripcionSolicitud').textContent = equipo.descripcion ?? '';
                 elemento('errorSolicitud').hidden = true;
                 elemento('solicitar').showModal();
@@ -165,22 +171,35 @@ elemento('formSolicitar').addEventListener('submit', evento => {
 
 elemento('formEquipo').addEventListener('submit', evento => {
     evento.preventDefault();
+    const errorEquipo = elemento('errorEquipo');
+    errorEquipo.hidden = true;
+    const codigo = elemento('codigo').value.trim();
     const nombre = elemento('nombre').value.trim();
     const descripcion = elemento('descripcion').value.trim();
-    if (!nombre) {
-        mensaje('El nombre del equipo es obligatorio.');
+    if (!codigo || !nombre) {
+        errorEquipo.textContent = 'El código y el nombre del equipo son obligatorios.';
+        errorEquipo.hidden = false;
         return;
     }
     accion(async () => {
-        const datos = { nombre, descripcion };
-        await escribir(editando === null ? '/api/equipos' : `/api/equipos/${editando}`,
-            editando === null ? 'POST' : 'PUT', datos);
-        cancelarEdicion();
+        try {
+            await escribir(editando === null ? '/api/equipos' : `/api/equipos/${editando}`,
+                editando === null ? 'POST' : 'PUT', { codigo, nombre, descripcion });
+        } catch (error) {
+            errorEquipo.textContent = error.message;
+            errorEquipo.hidden = false;
+            return;
+        }
+        cerrarModalEquipo();
         await cargar();
         mensaje('Equipo guardado correctamente.', 'success');
     });
 });
-elemento('cancelar').addEventListener('click', cancelarEdicion);
+elemento('cancelar').addEventListener('click', cerrarModalEquipo);
+elemento('abrirRegistro').addEventListener('click', () => abrirModalEquipo());
+elemento('modalEquipo').addEventListener('cancel', evento => {
+    if (ocupado) evento.preventDefault();
+});
 elemento('actualizar').addEventListener('click', () => accion(cargar));
 elemento('disponibles').addEventListener('change', () => accion(cargar));
 async function iniciar() {
@@ -188,8 +207,7 @@ async function iniciar() {
         const sesion = await sesionActual;
         if (!sesion) return;
         administrador = sesion.rol === 'ADMIN';
-        elemento('administracion').hidden = !administrador;
-        elemento('columnaId').hidden = !administrador;
+        elemento('abrirRegistro').hidden = !administrador;
         elemento('disponibles').checked = !administrador;
         elemento('actualizar').disabled = false;
         await cargar();

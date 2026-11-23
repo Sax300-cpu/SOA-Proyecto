@@ -5,68 +5,255 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Inicio · Préstamo de equipos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/estilo.css" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body>
 <header id="encabezado" class="bg-dark text-white py-3"></header>
 <main class="container py-4">
-    <h1 id="titulo">Bienvenido</h1>
-    <p id="ayuda" class="text-body-secondary"></p>
+    <section class="hero d-flex align-items-center justify-content-between gap-3">
+        <div>
+            <span id="rolHero" class="insignia-rol" hidden></span>
+            <h1 id="titulo" class="h2 mt-2 mb-1">Bienvenido</h1>
+            <p id="ayuda" class="lead mb-0"></p>
+        </div>
+        <img src="/img/logo-uta-circulo.png" alt="Escudo FISEI - Universidad Técnica de Ambato" class="hero-escudo d-none d-md-block">
+    </section>
+
+    <div id="aviso" class="alert alert-danger" role="alert" hidden></div>
 
     <div id="contenido" hidden>
-        <div class="row g-3">
-            <div class="col-sm-6 col-lg-3">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="h5">Catálogo de equipos</h2>
-                        <p class="text-body-secondary small">Consulta los equipos y solicita un préstamo. El administrador también registra, edita y desactiva.</p>
-                        <a href="/equipos.html" class="btn btn-primary">Abrir catálogo</a>
-                    </div>
-                </div>
+        <!-- Números de resumen (se llenan según el rol) -->
+        <div id="resumen" class="row g-3 mb-4"></div>
+
+        <!-- Panel del ADMIN: solicitudes por atender -->
+        <section id="panelAdmin" hidden>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <h2 class="h5 mb-0">Solicitudes por atender</h2>
+                <a href="/admin-aprobaciones.html" class="btn btn-sm btn-outline-primary">Ver todas</a>
             </div>
-            <div class="col-sm-6 col-lg-3" id="tarjetaPendientes">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="h5">Solicitudes pendientes</h2>
-                        <p class="text-body-secondary small">Aprueba o rechaza las solicitudes de los usuarios.</p>
-                        <a href="/admin-aprobaciones.html" class="btn btn-primary">Revisar pendientes</a>
-                    </div>
-                </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                    <tr>
+                        <th scope="col">Equipo</th>
+                        <th scope="col">Usuario</th>
+                        <th scope="col">Solicitada</th>
+                        <th scope="col">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody id="listaPendientes"></tbody>
+                </table>
             </div>
-            <div class="col-sm-6 col-lg-3" id="tarjetaMisSolicitudes">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="h5">Mis solicitudes</h2>
-                        <p class="text-body-secondary small">Consulta el estado y el historial de tus préstamos.</p>
-                        <a href="/mis-solicitudes.html" class="btn btn-primary">Mis solicitudes</a>
-                    </div>
-                </div>
+        </section>
+
+        <!-- Panel del USUARIO: sus préstamos recientes -->
+        <section id="panelUsuario" hidden>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <h2 class="h5 mb-0">Mis préstamos recientes</h2>
+                <a href="/equipos.html" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Solicitar un equipo</a>
             </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h2 class="h5">Entregas e historial</h2>
-                        <p class="text-body-secondary small">El administrador registra entregas y devoluciones; todos consultan el historial.</p>
-                        <a href="/devoluciones.html" class="btn btn-primary">Gestionar préstamos</a>
-                    </div>
-                </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                    <tr>
+                        <th scope="col">Equipo</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Solicitada</th>
+                    </tr>
+                    </thead>
+                    <tbody id="listaMios"></tbody>
+                </table>
             </div>
-        </div>
+            <p class="mt-2"><a href="/mis-solicitudes.html">Ver todo mi historial</a></p>
+        </section>
     </div>
 </main>
 <script src="/js/encabezado.js"></script>
 <script>
 'use strict';
 
+const porId = id => document.getElementById(id);
+const fechaCorta = valor => valor ? new Date(valor).toLocaleString('es-EC', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+let nombreEquipo = id => `#${id}`;
+let ocupado = false;
+
+// Lee JSON de la API; lanza error si la respuesta no es 2xx.
+async function leer(ruta) {
+    const respuesta = await fetchConSesion(ruta);
+    if (!respuesta.ok) throw new Error(`No se pudo cargar ${ruta} (HTTP ${respuesta.status}).`);
+    return respuesta.json();
+}
+
+// Dibuja una tarjeta de resumen: ícono, número grande y etiqueta (con enlace opcional).
+function tarjetaResumen({ icono, clase, valor, etiqueta, enlace }) {
+    const columna = document.createElement('div');
+    columna.className = 'col-6 col-lg-3';
+    const tarjeta = document.createElement(enlace ? 'a' : 'div');
+    tarjeta.className = 'card tarjeta-menu tarjeta-resumen h-100 shadow-sm text-decoration-none text-body';
+    if (enlace) tarjeta.href = enlace;
+    tarjeta.innerHTML = `
+        <div class="card-body d-flex align-items-center gap-3">
+            <div class="icono-tarjeta ${clase} mb-0"><i class="bi ${icono}"></i></div>
+            <div>
+                <div class="numero-resumen"></div>
+                <div class="text-body-secondary small etiqueta-resumen"></div>
+            </div>
+        </div>`;
+    tarjeta.querySelector('.numero-resumen').textContent = valor;
+    tarjeta.querySelector('.etiqueta-resumen').textContent = etiqueta;
+    columna.append(tarjeta);
+    return columna;
+}
+
+function filaVacia(tabla, columnas, texto) {
+    const fila = document.createElement('tr');
+    const celda = document.createElement('td');
+    celda.colSpan = columnas;
+    celda.className = 'text-center text-body-secondary py-4';
+    celda.textContent = texto;
+    fila.append(celda);
+    tabla.append(fila);
+}
+
+function celdaTexto(fila, texto) {
+    const celda = document.createElement('td');
+    celda.textContent = texto;
+    fila.append(celda);
+    return celda;
+}
+
+// Aprueba o rechaza una solicitud desde el panel (PUT con token CSRF) y vuelve a cargar los datos.
+async function resolverSolicitud(id, accion) {
+    if (ocupado) return;
+    ocupado = true;
+    document.querySelectorAll('#listaPendientes button').forEach(b => { b.disabled = true; });
+    try {
+        const csrf = await (await fetchConSesion('/api/auth/csrf')).json();
+        const respuesta = await fetchConSesion(`/api/prestamos/${id}/${accion}`, {
+            method: 'PUT',
+            headers: { [csrf.headerName]: csrf.token }
+        });
+        if (!respuesta.ok) {
+            const datos = await respuesta.json().catch(() => null);
+            throw new Error(datos?.error || `No se pudo ${accion} la solicitud.`);
+        }
+        porId('aviso').hidden = true;
+    } catch (error) {
+        porId('aviso').textContent = error.message;
+        porId('aviso').hidden = false;
+    } finally {
+        ocupado = false;
+        await cargarAdmin();
+    }
+}
+
+async function cargarAdmin() {
+    const [equipos, pendientes, entregados, aprobados] = await Promise.all([
+        leer('/api/equipos?disponibles=false'),
+        leer('/api/prestamos/pendientes'),
+        leer('/api/prestamos?estado=ENTREGADO'),
+        leer('/api/prestamos?estado=APROBADO')
+    ]);
+    nombreEquipo = await cargarNombresEquipos();
+
+    const disponibles = equipos.filter(e => e.disponible).length;
+    porId('resumen').replaceChildren(
+        tarjetaResumen({ icono: 'bi-pc-display', clase: 'icono-catalogo', valor: `${disponibles} / ${equipos.length}`,
+            etiqueta: 'Equipos disponibles', enlace: '/equipos.html' }),
+        tarjetaResumen({ icono: 'bi-hourglass-split', clase: 'icono-pendientes', valor: pendientes.length,
+            etiqueta: 'Solicitudes pendientes', enlace: '/admin-aprobaciones.html' }),
+        tarjetaResumen({ icono: 'bi-box-arrow-up-right', clase: 'icono-solicitudes', valor: aprobados.length,
+            etiqueta: 'Aprobados por entregar', enlace: '/devoluciones.html' }),
+        tarjetaResumen({ icono: 'bi-arrow-return-left', clase: 'icono-historial', valor: entregados.length,
+            etiqueta: 'Entregados sin devolver', enlace: '/devoluciones.html' })
+    );
+
+    const tabla = porId('listaPendientes');
+    tabla.replaceChildren();
+    if (pendientes.length === 0) {
+        filaVacia(tabla, 4, 'No hay solicitudes pendientes. ¡Todo al día!');
+        return;
+    }
+    for (const prestamo of pendientes.slice(0, 5)) {
+        const fila = document.createElement('tr');
+        celdaTexto(fila, nombreEquipo(prestamo.equipoId));
+        celdaTexto(fila, `Usuario #${prestamo.usuarioId}`);
+        celdaTexto(fila, fechaCorta(prestamo.fechaSolicitud));
+        const acciones = celdaTexto(fila, '');
+        const aprobar = document.createElement('button');
+        aprobar.type = 'button';
+        aprobar.className = 'btn btn-sm btn-success me-2';
+        aprobar.textContent = 'Aprobar';
+        aprobar.addEventListener('click', () => resolverSolicitud(prestamo.id, 'aprobar'));
+        const rechazar = document.createElement('button');
+        rechazar.type = 'button';
+        rechazar.className = 'btn btn-sm btn-outline-danger';
+        rechazar.textContent = 'Rechazar';
+        rechazar.addEventListener('click', () => resolverSolicitud(prestamo.id, 'rechazar'));
+        acciones.append(aprobar, rechazar);
+        tabla.append(fila);
+    }
+    if (pendientes.length > 5) {
+        filaVacia(tabla, 4, `y ${pendientes.length - 5} más… usa «Ver todas».`);
+    }
+}
+
+async function cargarUsuario() {
+    const [equipos, mios] = await Promise.all([
+        leer('/api/equipos?disponibles=true'),
+        leer('/api/prestamos/mios')
+    ]);
+    nombreEquipo = await cargarNombresEquipos();
+
+    const contar = estado => mios.filter(p => p.estado === estado).length;
+    porId('resumen').replaceChildren(
+        tarjetaResumen({ icono: 'bi-pc-display', clase: 'icono-catalogo', valor: equipos.length,
+            etiqueta: 'Equipos disponibles', enlace: '/equipos.html' }),
+        tarjetaResumen({ icono: 'bi-hourglass-split', clase: 'icono-pendientes', valor: contar('SOLICITADO'),
+            etiqueta: 'Esperando aprobación', enlace: '/mis-solicitudes.html' }),
+        tarjetaResumen({ icono: 'bi-bag-check', clase: 'icono-solicitudes', valor: contar('APROBADO'),
+            etiqueta: 'Listos para retirar', enlace: '/mis-solicitudes.html' }),
+        tarjetaResumen({ icono: 'bi-laptop', clase: 'icono-historial', valor: contar('ENTREGADO'),
+            etiqueta: 'En tu poder', enlace: '/mis-solicitudes.html' })
+    );
+
+    const tabla = porId('listaMios');
+    tabla.replaceChildren();
+    if (mios.length === 0) {
+        filaVacia(tabla, 3, 'Aún no has solicitado equipos.');
+        return;
+    }
+    const recientes = [...mios].sort((a, b) => b.id - a.id).slice(0, 5);
+    for (const prestamo of recientes) {
+        const fila = document.createElement('tr');
+        celdaTexto(fila, nombreEquipo(prestamo.equipoId));
+        celdaTexto(fila, '').append(etiquetaEstado(prestamo.estado));
+        celdaTexto(fila, fechaCorta(prestamo.fechaSolicitud));
+        tabla.append(fila);
+    }
+}
+
 async function iniciar() {
     const usuario = await sesionActual;
     if (!usuario) return;
-    document.getElementById('titulo').textContent = `Hola, ${usuario.nombre}`;
-    document.getElementById('ayuda').textContent = usuario.rol === 'ADMIN'
-        ? 'Gestiona el catálogo, las solicitudes y los préstamos.'
+    const admin = usuario.rol === 'ADMIN';
+    porId('titulo').textContent = `Hola, ${usuario.nombre}`;
+    porId('ayuda').textContent = admin
+        ? 'Este es el estado actual del catálogo y de los préstamos.'
         : 'Solicita equipos y consulta el estado de tus préstamos.';
-    document.getElementById('tarjetaPendientes').hidden = usuario.rol !== 'ADMIN';
-    document.getElementById('tarjetaMisSolicitudes').hidden = usuario.rol !== 'USUARIO';
-    document.getElementById('contenido').hidden = false;
+    const rolHero = porId('rolHero');
+    rolHero.textContent = admin ? 'Administrador' : 'Usuario';
+    rolHero.hidden = false;
+    try {
+        if (admin) await cargarAdmin(); else await cargarUsuario();
+        porId('panelAdmin').hidden = !admin;
+        porId('panelUsuario').hidden = admin;
+        porId('contenido').hidden = false;
+    } catch (error) {
+        porId('aviso').textContent = error.message;
+        porId('aviso').hidden = false;
+    }
 }
 
 iniciar();

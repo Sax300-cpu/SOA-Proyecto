@@ -5,11 +5,15 @@
     let admin = false;
     let seleccion = null;
     let guardando = false;
+    let nombreEquipo = id => `#${id}`;
 
+    // Aviso destacado: solo para confirmaciones de acciones y errores.
     function mensaje(texto, tipo = 'info') {
         porId('mensaje').textContent = texto;
         porId('mensaje').className = `alert alert-${tipo}`;
+        porId('mensaje').hidden = false;
     }
+
 
     async function pedir(ruta, opciones = {}) {
         const respuesta = await fetchConSesion(ruta, opciones);
@@ -30,7 +34,7 @@
     }
 
     function fecha(valor) {
-        return valor ? new Date(valor).toLocaleString('es-EC') : '—';
+        return valor ? new Date(valor).toLocaleString('es-EC', { dateStyle: 'short', timeStyle: 'short' }) : '—';
     }
 
     function mostrar(registros) {
@@ -38,9 +42,9 @@
         for (const prestamo of registros) {
             const fila = document.createElement('tr');
             celda(fila, `#${prestamo.id}`);
-            celda(fila, `#${prestamo.equipoId}`);
+            celda(fila, nombreEquipo(prestamo.equipoId));
             if (admin) celda(fila, `#${prestamo.usuarioId}`);
-            celda(fila, prestamo.estado);
+            celda(fila, null).replaceChildren(etiquetaEstado(prestamo.estado));
             celda(fila, fecha(prestamo.fechaSolicitud));
             celda(fila, fecha(prestamo.fechaEntrega));
             celda(fila, fecha(prestamo.fechaDevolucion));
@@ -50,7 +54,7 @@
                 if (['APROBADO', 'ENTREGADO'].includes(prestamo.estado)) {
                     const boton = document.createElement('button');
                     boton.type = 'button';
-                    boton.className = 'btn btn-outline-primary';
+                    boton.className = 'btn btn-sm btn-outline-primary text-nowrap';
                     boton.textContent = prestamo.estado === 'APROBADO' ? 'Registrar entrega' : 'Registrar devolución';
                     boton.setAttribute('aria-label', `${boton.textContent} del préstamo ${prestamo.id}`);
                     boton.addEventListener('click', () => abrir(prestamo));
@@ -69,13 +73,13 @@
         // Retirar acciones antiguas mientras se actualizan los registros.
         porId('registros').replaceChildren();
         porId('vacio').hidden = true;
-        mensaje(aviso || 'Consultando préstamos…');
+        if (aviso) mensaje(aviso, 'success'); else porId('mensaje').hidden = true;
         try {
             const base = admin ? '/api/prestamos' : '/api/historial/mio';
             const estado = porId('estado').value;
             const registros = await pedir(base + (estado ? `?estado=${encodeURIComponent(estado)}` : ''));
+            nombreEquipo = await cargarNombresEquipos();
             mostrar(registros);
-            mensaje(aviso || `${registros.length} préstamo(s) encontrado(s).`, 'success');
         } catch (error) {
             mensaje(aviso ? `${aviso} No se pudo actualizar el historial: ${error.message}` : error.message, 'danger');
         } finally {
@@ -88,7 +92,7 @@
         seleccion = { id: prestamo.id, accion: prestamo.estado === 'APROBADO' ? 'entregar' : 'devolver' };
         const entrega = seleccion.accion === 'entregar';
         porId('operacion-titulo').textContent = entrega ? 'Registrar entrega' : 'Registrar devolución';
-        porId('operacion-detalle').textContent = `Préstamo #${prestamo.id} · Equipo #${prestamo.equipoId}. `
+        porId('operacion-detalle').textContent = `Préstamo #${prestamo.id} · Equipo ${nombreEquipo(prestamo.equipoId)}. `
             + (entrega ? 'Confirma que entregaste el equipo al usuario.' : 'Confirma que recibiste el equipo. Volverá a estar disponible.');
         porId('observacion-campo').hidden = entrega;
         porId('observacion').value = '';
@@ -97,6 +101,7 @@
     }
 
     porId('filtros').addEventListener('submit', event => { event.preventDefault(); cargar(); });
+    porId('estado').addEventListener('change', () => cargar());
     porId('cancelar').addEventListener('click', () => porId('operacion').close());
     porId('operacion').addEventListener('cancel', event => { if (guardando) event.preventDefault(); });
     porId('operacion-form').addEventListener('submit', async event => {

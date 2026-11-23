@@ -25,7 +25,7 @@ class PrestamoServiceTest {
     private final EquipoRepository equipos = mock(EquipoRepository.class);
     private final PrestamoService servicio = new PrestamoService(prestamos, usuarios, equipos);
     private final Usuario usuario = new Usuario(2L, "Usuario", "usuario", "hash", null);
-    private final Equipo equipo = new Equipo(3L, "Laptop", "", false, true);
+    private final Equipo equipo = new Equipo(3L, "LAP-003", "Laptop", "", false, true);
     private final Prestamo prestamo = new Prestamo();
 
     @BeforeEach

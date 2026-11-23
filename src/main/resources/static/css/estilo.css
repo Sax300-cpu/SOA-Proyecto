@@ -1,0 +1,211 @@
+/* Estilo compartido de la aplicación (sobre Bootstrap 5.3).
+   Paleta: azul tinta + marfil cálido + dorado discreto. Tipografía: la predeterminada de Bootstrap. */
+
+:root {
+    --tinta: #12263f;
+    --tinta-suave: #1d3a5f;
+    --dorado: #b08d57;
+    --dorado-suave: #e9dfcc;
+    --fondo-pagina: #f6f5f1;
+    --borde: #e4e1d8;
+
+    /* Sustituye el azul primario de Bootstrap por la tinta */
+    --bs-primary: #12263f;
+    --bs-primary-rgb: 18, 38, 63;
+    --bs-link-color: #1d3a5f;
+    --bs-link-hover-color: #12263f;
+    --bs-body-color: #26303d;
+}
+
+body {
+    background: var(--fondo-pagina) !important;
+}
+
+h1, h2, h3, .h1, .h2, .h3, .h4 {
+    color: var(--tinta);
+    font-weight: 700;
+}
+
+/* Barra superior: plana, sin degradado; el enlace activo lleva una línea dorada */
+#encabezado {
+    background: var(--tinta) !important;
+    border-bottom: 3px solid var(--dorado);
+}
+#encabezado .logo-encabezado {
+    width: 2.4rem;
+    height: 2.4rem;
+    margin-right: .6rem;
+    vertical-align: middle;
+}
+#encabezado .btn-outline-light {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    color: rgba(255, 255, 255, .78);
+    padding: .25rem .6rem;
+}
+#encabezado .btn-outline-light:hover {
+    background: transparent;
+    color: #fff;
+}
+#encabezado .btn-outline-light.active {
+    background: transparent;
+    color: #fff;
+    border-bottom-color: var(--dorado);
+}
+#usuarioEncabezado { color: rgba(255, 255, 255, .85); font-size: .9rem; }
+
+/* Portada: bloque plano y sobrio con filete dorado */
+.hero {
+    background: var(--tinta);
+    color: #fff;
+    border-radius: .75rem;
+    border-left: 5px solid var(--dorado);
+    padding: 1.25rem 2rem;
+    margin-bottom: 1.5rem;
+}
+.hero h1 {
+    color: #fff;
+    font-weight: 700;
+}
+.hero-escudo {
+    width: 6.5rem;
+    height: 6.5rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(176, 141, 87, .6);
+}
+.hero .lead { color: rgba(255, 255, 255, .8); font-size: 1.05rem; }
+.hero .insignia-rol {
+    border: 1px solid var(--dorado);
+    color: var(--dorado-suave);
+    border-radius: 2rem;
+    padding: .2rem .8rem;
+    font-size: .78rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Tarjetas */
+.tarjeta-menu {
+    background: #fff;
+    border: 1px solid var(--borde);
+    border-radius: .75rem;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.tarjeta-menu:hover {
+    border-color: var(--dorado);
+    box-shadow: 0 .4rem 1rem rgba(18, 38, 63, .08) !important;
+}
+/* Íconos: un solo estilo sobrio (sin colores distintos por tarjeta) */
+.icono-tarjeta {
+    width: 3rem;
+    height: 3rem;
+    border-radius: .65rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--tinta-suave);
+    background: #eef1f6;
+    border: 1px solid #dde3ec;
+    margin-bottom: 1rem;
+}
+.icono-catalogo, .icono-pendientes, .icono-solicitudes, .icono-historial {
+    background: #eef1f6;
+}
+
+/* Botones */
+.btn-primary {
+    --bs-btn-bg: var(--tinta);
+    --bs-btn-border-color: var(--tinta);
+    --bs-btn-hover-bg: var(--tinta-suave);
+    --bs-btn-hover-border-color: var(--tinta-suave);
+    --bs-btn-active-bg: var(--tinta-suave);
+    --bs-btn-active-border-color: var(--tinta-suave);
+    --bs-btn-disabled-bg: var(--tinta);
+    --bs-btn-disabled-border-color: var(--tinta);
+}
+.btn-outline-primary {
+    --bs-btn-color: var(--tinta);
+    --bs-btn-border-color: var(--tinta);
+    --bs-btn-hover-bg: var(--tinta);
+    --bs-btn-hover-border-color: var(--tinta);
+    --bs-btn-active-bg: var(--tinta);
+    --bs-btn-active-border-color: var(--tinta);
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--tinta-suave);
+    box-shadow: 0 0 0 .2rem rgba(29, 58, 95, .15);
+}
+
+/* Tablas */
+.table-responsive {
+    border-radius: .75rem;
+    border: 1px solid var(--borde);
+    background: #fff;
+}
+.table thead.table-dark,
+.table thead.table-dark th {
+    background: var(--tinta);
+    border-color: var(--tinta);
+    font-weight: 500;
+    font-size: .85rem;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+}
+.table > :not(caption) > * > * { padding: .8rem .75rem; }
+.table-hover > tbody > tr:hover > * { background: #f7f4ec; }
+
+/* Pantallas de acceso (login / registro): fondo blanco, sobrio */
+.fondo-acceso {
+    background: #fff !important;
+}
+.tarjeta-acceso {
+    border: 1px solid var(--borde);
+    border-radius: .75rem;
+    box-shadow: 0 4px 24px rgba(18, 38, 63, .07) !important;
+}
+.logo-acceso {
+    display: block;
+    width: 8.5rem;
+    height: 8.5rem;
+    object-fit: contain;
+    margin: 0 auto 1rem;
+}
+
+/* Ventanas modales (<dialog> nativo) */
+.modal-dialogo {
+    border: 0;
+    border-radius: .75rem;
+    padding: 1.5rem;
+    width: min(32rem, calc(100vw - 2rem));
+    box-shadow: 0 20px 40px rgba(0, 0, 0, .3);
+}
+.modal-dialogo::backdrop {
+    background: rgba(18, 38, 63, .55);
+}
+
+/* Tarjetas de resumen del inicio */
+.tarjeta-resumen .numero-resumen {
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--tinta);
+}
+.tarjeta-resumen .etiqueta-resumen { letter-spacing: .2px; }
+.tarjeta-resumen .icono-tarjeta { flex-shrink: 0; margin-bottom: 0; }
+
+@media (max-width: 576px) {
+    .hero { padding: 1.25rem; }
+}
+
+/* Barra de búsqueda y filtros del catálogo */
+.barra-filtros {
+    background: #fff;
+    border: 1px solid var(--borde);
+    border-radius: .75rem;
+    padding: .85rem 1rem;
+}
+.barra-filtros .campo-busqueda { flex: 1 1 16rem; width: auto; min-width: 14rem; }

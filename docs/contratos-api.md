@@ -19,6 +19,7 @@ Las entidades están en `src/main/java/com/soa/proyecto/model/` y los repositori
 | Campo | Tipo | Notas |
 |---|---|---|
 | id | Long | Autogenerado |
+| codigo | String | Código de inventario único con formato LETRAS-NÚMEROS (ej. LAP-001); obligatorio al crear/editar |
 | nombre | String | Obligatorio |
 | descripcion | String | Opcional |
 | disponible | Boolean | Obligatorio |

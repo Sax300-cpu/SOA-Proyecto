@@ -46,6 +46,7 @@ class DevolucionServiceTest {
         assertSame(prestamo, servicio.entregar(1L));
         assertEquals(EstadoPrestamo.ENTREGADO, prestamo.getEstado());
         assertNotNull(prestamo.getFechaEntrega());
+        assertEquals(prestamo.getFechaEntrega().plusDays(3), prestamo.getFechaLimite());
         assertNull(prestamo.getFechaDevolucion());
         assertFalse(equipo.getDisponible());
         verify(em).refresh(prestamo, LockModeType.PESSIMISTIC_WRITE);
@@ -75,11 +76,14 @@ class DevolucionServiceTest {
     void devolucionGuardaObservacionFechaYLiberaEquipo() {
         prestamo.setEstado(EstadoPrestamo.ENTREGADO);
         prestamo.setFechaEntrega(LocalDateTime.now().minusHours(1));
+        prestamo.setFechaLimite(prestamo.getFechaEntrega().plusDays(3));
         var entrega = prestamo.getFechaEntrega();
+        var limite = prestamo.getFechaLimite();
         servicio.devolver(1L, "  Pantalla rayada  ");
         assertEquals(EstadoPrestamo.DEVUELTO, prestamo.getEstado());
         assertEquals("Pantalla rayada", prestamo.getObservacion());
         assertEquals(entrega, prestamo.getFechaEntrega());
+        assertEquals(limite, prestamo.getFechaLimite());
         assertNotNull(prestamo.getFechaDevolucion());
         assertTrue(equipo.getDisponible());
         verificarError(HttpStatus.BAD_REQUEST, () -> servicio.devolver(1L, null));

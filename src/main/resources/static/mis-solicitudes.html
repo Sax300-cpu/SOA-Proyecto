@@ -16,7 +16,8 @@
 <main class="container py-4">
     <h1 class="mb-4">Mis Solicitudes de Préstamo</h1>
 
-    <a href="/equipos.html" class="btn btn-primary mb-4">Buscar equipos</a>
+    <a href="/equipos.html" class="btn btn-primary mb-3">Buscar equipos</a>
+    <p class="alert alert-light border small mb-3"><i class="bi bi-info-circle me-1"></i>Para devolver un equipo, entrégalo físicamente al administrador para que registre la devolución.</p>
     <div id="errorHistorial" class="alert alert-danger" role="alert" hidden></div>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -26,6 +27,7 @@
                 <th scope="col">Equipo</th>
                 <th scope="col">Estado</th>
                 <th scope="col">Fecha de solicitud</th>
+                <th scope="col">Fecha límite</th>
                 <th scope="col">Observación</th>
             </tr>
             </thead>
@@ -37,6 +39,7 @@
 <script src="/js/encabezado.js"></script>
 <script>
     const tablaHistorial = document.getElementById("tablaHistorial");
+    const fechaCorta = valor => valor ? new Date(valor).toLocaleString("es-EC", { dateStyle: "short", timeStyle: "short" }) : "—";
 
     async function mensajeError(respuesta) {
         const texto = await respuesta.text();
@@ -53,7 +56,7 @@
 
     function agregarCelda(fila, valor) {
         const celda = document.createElement("td");
-        celda.textContent = valor ?? "";
+        celda.textContent = valor ?? "—";
         fila.appendChild(celda);
         return celda;
     }
@@ -72,7 +75,7 @@
             if (prestamos.length === 0) {
                 const fila = document.createElement("tr");
                 const celda = document.createElement("td");
-                celda.colSpan = 5;
+                celda.colSpan = 6;
                 celda.className = "text-center text-body-secondary";
                 celda.textContent = "No tienes solicitudes.";
                 fila.appendChild(celda);
@@ -84,8 +87,10 @@
                 const fila = document.createElement("tr");
                 agregarCelda(fila, prestamo.id);
                 agregarCelda(fila, nombreEquipo(prestamo.equipoId));
-                agregarCelda(fila, "").replaceChildren(etiquetaEstado(prestamo.estado));
-                agregarCelda(fila, prestamo.fechaSolicitud);
+                agregarCelda(fila, "").replaceChildren(etiquetaEstadoPrestamo(prestamo));
+                agregarCelda(fila, fechaCorta(prestamo.fechaSolicitud));
+                const limiteCelda = agregarCelda(fila, fechaCorta(prestamo.fechaLimite));
+                if (estaVencido(prestamo)) limiteCelda.className = "text-danger fw-semibold";
                 agregarCelda(fila, prestamo.observacion);
                 tablaHistorial.appendChild(fila);
             });

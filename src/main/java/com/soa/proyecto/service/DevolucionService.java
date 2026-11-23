@@ -9,6 +9,7 @@ import com.soa.proyecto.repository.UsuarioRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,9 @@ public class DevolucionService {
     private final UsuarioRepository usuarios;
     private final EntityManager entityManager;
 
+    @Value("${prestamos.dias-plazo:3}")
+    private int diasPlazo = 3;
+
     @Transactional
     public Prestamo entregar(Long id) {
         Prestamo prestamo = buscarParaActualizar(id);
@@ -35,9 +39,11 @@ public class DevolucionService {
         if (!Boolean.TRUE.equals(equipo.getActivo())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipo está desactivado");
         }
+        LocalDateTime ahora = LocalDateTime.now();
         equipo.setDisponible(false);
         prestamo.setEstado(EstadoPrestamo.ENTREGADO);
-        prestamo.setFechaEntrega(LocalDateTime.now());
+        prestamo.setFechaEntrega(ahora);
+        prestamo.setFechaLimite(ahora.plusDays(diasPlazo));
         equipos.save(equipo);
         return prestamos.save(prestamo);
     }

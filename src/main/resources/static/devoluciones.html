@@ -15,6 +15,7 @@
     <h1 id="titulo" class="mb-1">Entregas, devoluciones e historial</h1>
     <p id="ayuda" class="text-body-secondary mb-4">Consulta el recorrido de tus préstamos.</p>
     <div id="mensaje" class="alert" role="status" aria-live="polite" hidden></div>
+    <p id="notaDevolucion" class="alert alert-light border small mb-3" hidden><i class="bi bi-info-circle me-1"></i>Para devolver un equipo, entrégalo físicamente al administrador para que registre la devolución.</p>
     <section id="contenido" hidden aria-label="Historial de préstamos">
         <form id="filtros" class="barra-filtros d-flex flex-wrap align-items-center gap-3 mb-3">
             <div class="d-flex align-items-center gap-2">
@@ -41,6 +42,7 @@
                     <th scope="col">Estado</th>
                     <th scope="col">Solicitud</th>
                     <th scope="col">Entrega</th>
+                    <th scope="col">Fecha límite</th>
                     <th scope="col">Devolución</th>
                     <th scope="col">Observación</th>
                     <th scope="col" id="acciones-col">Acciones</th>

@@ -26,6 +26,9 @@
         <!-- Números de resumen (se llenan según el rol) -->
         <div id="resumen" class="row g-3 mb-4"></div>
 
+        <!-- Alerta de préstamos vencidos (ADMIN) -->
+        <div id="alertaVencidos" class="alert alert-danger py-2" role="alert" hidden></div>
+
         <!-- Panel del ADMIN: solicitudes por atender -->
         <section id="panelAdmin" hidden>
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
@@ -66,6 +69,7 @@
                 </table>
             </div>
             <p class="mt-2"><a href="/mis-solicitudes.html">Ver todo mi historial</a></p>
+            <p class="alert alert-light border small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>Para devolver un equipo, entrégalo físicamente al administrador para que registre la devolución.</p>
         </section>
     </div>
 </main>
@@ -158,6 +162,21 @@ async function cargarAdmin() {
     nombreEquipo = await cargarNombresEquipos();
 
     const disponibles = equipos.filter(e => e.disponible).length;
+    const vencidos = entregados.filter(estaVencido).length;
+    const alertaVencidos = porId('alertaVencidos');
+    if (vencidos > 0) {
+        alertaVencidos.replaceChildren();
+        const texto = document.createTextNode(`Hay ${vencidos} préstamo${vencidos === 1 ? '' : 's'} entregado${vencidos === 1 ? '' : 's'} con plazo vencido. `);
+        const enlace = document.createElement('a');
+        enlace.href = '/devoluciones.html';
+        enlace.className = 'alert-link';
+        enlace.textContent = 'Revisar en Historial';
+        alertaVencidos.append(texto, enlace);
+        alertaVencidos.hidden = false;
+    } else {
+        alertaVencidos.hidden = true;
+    }
+
     porId('resumen').replaceChildren(
         tarjetaResumen({ icono: 'bi-pc-display', clase: 'icono-catalogo', valor: `${disponibles} / ${equipos.length}`,
             etiqueta: 'Equipos disponibles', enlace: '/equipos.html' }),
@@ -166,7 +185,8 @@ async function cargarAdmin() {
         tarjetaResumen({ icono: 'bi-box-arrow-up-right', clase: 'icono-solicitudes', valor: aprobados.length,
             etiqueta: 'Aprobados por entregar', enlace: '/devoluciones.html' }),
         tarjetaResumen({ icono: 'bi-arrow-return-left', clase: 'icono-historial', valor: entregados.length,
-            etiqueta: 'Entregados sin devolver', enlace: '/devoluciones.html' })
+            etiqueta: vencidos > 0 ? `Entregados (${vencidos} vencido${vencidos === 1 ? '' : 's'})` : 'Entregados sin devolver',
+            enlace: '/devoluciones.html' })
     );
 
     const tabla = porId('listaPendientes');
@@ -207,6 +227,14 @@ async function cargarUsuario() {
     nombreEquipo = await cargarNombresEquipos();
 
     const contar = estado => mios.filter(p => p.estado === estado).length;
+    const vencidos = mios.filter(estaVencido).length;
+    const tarjetaEnPoder = tarjetaResumen({ icono: 'bi-laptop', clase: 'icono-historial', valor: contar('ENTREGADO'),
+        etiqueta: vencidos > 0 ? `En tu poder (${vencidos} vencido${vencidos === 1 ? '' : 's'})` : 'En tu poder',
+        enlace: '/mis-solicitudes.html' });
+    if (vencidos > 0) {
+        tarjetaEnPoder.querySelector('.etiqueta-resumen').classList.add('text-danger', 'fw-semibold');
+    }
+
     porId('resumen').replaceChildren(
         tarjetaResumen({ icono: 'bi-pc-display', clase: 'icono-catalogo', valor: equipos.length,
             etiqueta: 'Equipos disponibles', enlace: '/equipos.html' }),
@@ -214,8 +242,7 @@ async function cargarUsuario() {
             etiqueta: 'Esperando aprobación', enlace: '/mis-solicitudes.html' }),
         tarjetaResumen({ icono: 'bi-bag-check', clase: 'icono-solicitudes', valor: contar('APROBADO'),
             etiqueta: 'Listos para retirar', enlace: '/mis-solicitudes.html' }),
-        tarjetaResumen({ icono: 'bi-laptop', clase: 'icono-historial', valor: contar('ENTREGADO'),
-            etiqueta: 'En tu poder', enlace: '/mis-solicitudes.html' })
+        tarjetaEnPoder
     );
 
     const tabla = porId('listaMios');
@@ -228,7 +255,7 @@ async function cargarUsuario() {
     for (const prestamo of recientes) {
         const fila = document.createElement('tr');
         celdaTexto(fila, nombreEquipo(prestamo.equipoId));
-        celdaTexto(fila, '').append(etiquetaEstado(prestamo.estado));
+        celdaTexto(fila, '').append(etiquetaEstadoPrestamo(prestamo));
         celdaTexto(fila, fechaCorta(prestamo.fechaSolicitud));
         tabla.append(fila);
     }

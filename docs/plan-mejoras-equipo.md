@@ -52,29 +52,23 @@ Siguiendo la regla del equipo, se avisa: `Equipo`, `EquipoRepository`, `EquipoSe
 - [ ] Usuario: el historial y «Mis solicitudes» muestran el código y el nombre del equipo.
 - [ ] Probar en el móvil (o con el navegador a 375 px de ancho).
 
-## 4. Pendientes y decisiones (aún NO implementados)
+## 4. Pendientes y decisiones (implementados en `feature/mejoras-prestamos`)
 
-Cosas que se detectaron al probar y que conviene decidir entre todos.
+Reglas acordadas e implementadas en la rama `feature/mejoras-prestamos` (con límite de **3** activos y plazo de **3 días**):
 
-### 4.1 Solicitudes duplicadas (error a corregir)
-Hoy un usuario puede solicitar varias veces el mismo equipo mientras siga disponible, y el admin ve las solicitudes repetidas.
-- **Propuesta:** en `PrestamoService.crearSolicitud`, responder 409 si el usuario ya tiene una solicitud activa (SOLICITADO, APROBADO o ENTREGADO) de ese equipo; en el catálogo, mostrar «Solicitud en curso» desactivado.
-- **Dueño:** Luis (toca `PrestamoService` y `PrestamoRepository`).
+### 4.1 Solicitudes duplicadas — Implementado
+En `PrestamoService.crearSolicitud`, responde `409` si el usuario ya tiene una solicitud activa (`SOLICITADO`, `APROBADO` o `ENTREGADO`) de ese equipo; en el catálogo (`/js/equipos.js`), muestra «Solicitud en curso» desactivado.
 
-### 4.2 Límite de solicitudes por usuario
-- **Propuesta:** máximo **3 solicitudes activas** por usuario a la vez (cantidad configurable en `application.properties`). Al superarlo, 409 con un mensaje claro.
-- **Decisión pendiente:** ¿3 es un buen número para el alcance del proyecto?
-- **Dueño:** Luis.
+### 4.2 Límite de solicitudes por usuario — Implementado (máx. 3)
+Máximo **3 solicitudes/préstamos activos** por usuario a la vez (`prestamos.limite-activos=3` en `application.properties`). Al superarlo, responde `409` con un mensaje claro.
 
-### 4.3 Plazo de devolución
-Hace el sistema más realista: un préstamo sin fecha de vuelta no se puede controlar.
-- **Propuesta:** al **entregar**, se guarda `fechaLimite = hoy + N días` (N configurable, por ejemplo 3). Es una columna nueva y opcional en `Prestamo`, así que no hay que tocar enums ni la base a mano.
-- **Estado «Vencido»:** se calcula (ENTREGADO y fecha límite superada), sin nuevo valor en `EstadoPrestamo`. Se muestra en rojo en el historial y en el panel del admin («Entregados vencidos»); el usuario lo ve en «En tu poder».
+### 4.3 Plazo de devolución — Implementado (3 días, sin multas)
+Al **entregar** en `DevolucionService.entregar`, se guarda `fechaLimite = hoy + 3 días` (`prestamos.dias-plazo=3` en `application.properties`). Es una columna nueva y opcional (`preFechaLimite`) en `Prestamo`, sin tocar el enum `EstadoPrestamo`.
+- **Estado visual «Vencido»:** se calcula en cliente (`ENTREGADO` y `fechaLimite` superada). Se muestra badge rojo en historial, mis solicitudes y panel de inicio (Admin: alerta y «Entregados (N vencidos)»; Usuario: indicador en «En tu poder»).
 - **Alcance:** solo informativo. **No hay multas ni cobros**, tal como exige el proyecto.
-- **Dueños:** Luis (`Prestamo`) y Emilio (entrega e historial).
 
-### 4.4 Cómo devuelve un usuario
-La devolución la registra solo el ADMIN cuando recibe el equipo físico. Falta una nota en pantalla que lo explique al usuario («Para devolver, entrega el equipo al administrador»).
+### 4.4 Cómo devuelve un usuario — Implementado
+Se muestra un aviso informativo en `/index.html` (panel de usuario), `/mis-solicitudes.html` y `/devoluciones.html` explicando que la devolución la registra el administrador al recibir el equipo físico.
 
 ### Orden sugerido
 1. Probar esta rama y corregir lo que encuentren.

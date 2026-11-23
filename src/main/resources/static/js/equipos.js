@@ -7,6 +7,8 @@ let ocupado = false;
 let equipoElegido = null;
 let equipos = [];
 let busqueda = '';
+let equiposSolicitados = new Set();
+const ESTADOS_ACTIVOS = new Set(['SOLICITADO', 'APROBADO', 'ENTREGADO']);
 
 function mensaje(texto, tipo = 'danger') {
     elemento('mensaje').textContent = texto;
@@ -67,12 +69,26 @@ async function accion(tarea) {
         mensaje(error.message);
     } finally {
         ocupado = false;
-        document.querySelectorAll('main button').forEach(boton => { boton.disabled = false; });
+        document.querySelectorAll('main button').forEach(boton => {
+            if (!boton.dataset.fijoDeshabilitado) boton.disabled = false;
+        });
     }
 }
 
 async function cargar() {
-    equipos = await peticion(`/api/equipos?disponibles=${elemento('disponibles').checked}`);
+    if (administrador) {
+        equipos = await peticion(`/api/equipos?disponibles=${elemento('disponibles').checked}`);
+        equiposSolicitados = new Set();
+    } else {
+        const [listaEquipos, misSolicitudes] = await Promise.all([
+            peticion(`/api/equipos?disponibles=${elemento('disponibles').checked}`),
+            peticion('/api/prestamos/mios').catch(() => [])
+        ]);
+        equipos = listaEquipos;
+        equiposSolicitados = new Set(
+            misSolicitudes.filter(p => ESTADOS_ACTIVOS.has(p.estado)).map(p => p.equipoId)
+        );
+    }
     mostrarEquipos();
 }
 
@@ -120,19 +136,29 @@ function mostrarEquipos() {
             });
             acciones.append(editar, desactivar);
         } else if (equipo.disponible) {
-            const solicitar = document.createElement('button');
-            solicitar.type = 'button';
-            solicitar.className = 'btn btn-sm btn-outline-primary';
-            solicitar.textContent = 'Solicitar equipo';
-            solicitar.setAttribute('aria-label', `Solicitar equipo ${equipo.nombre}`);
-            solicitar.addEventListener('click', () => {
-                equipoElegido = equipo;
-                elemento('equipoSolicitud').textContent = equipo.codigo ? `${equipo.codigo} · ${equipo.nombre}` : equipo.nombre;
-                elemento('descripcionSolicitud').textContent = equipo.descripcion ?? '';
-                elemento('errorSolicitud').hidden = true;
-                elemento('solicitar').showModal();
-            });
-            acciones.append(solicitar);
+            if (equiposSolicitados.has(equipo.id)) {
+                const enCurso = document.createElement('button');
+                enCurso.type = 'button';
+                enCurso.className = 'btn btn-sm btn-outline-secondary';
+                enCurso.textContent = 'Solicitud en curso';
+                enCurso.disabled = true;
+                enCurso.dataset.fijoDeshabilitado = 'true';
+                acciones.append(enCurso);
+            } else {
+                const solicitar = document.createElement('button');
+                solicitar.type = 'button';
+                solicitar.className = 'btn btn-sm btn-outline-primary';
+                solicitar.textContent = 'Solicitar equipo';
+                solicitar.setAttribute('aria-label', `Solicitar equipo ${equipo.nombre}`);
+                solicitar.addEventListener('click', () => {
+                    equipoElegido = equipo;
+                    elemento('equipoSolicitud').textContent = equipo.codigo ? `${equipo.codigo} · ${equipo.nombre}` : equipo.nombre;
+                    elemento('descripcionSolicitud').textContent = equipo.descripcion ?? '';
+                    elemento('errorSolicitud').hidden = true;
+                    elemento('solicitar').showModal();
+                });
+                acciones.append(solicitar);
+            }
         } else {
             acciones.textContent = 'No disponible para solicitar';
         }
@@ -164,6 +190,7 @@ elemento('formSolicitar').addEventListener('submit', evento => {
             return;
         }
         elemento('solicitar').close();
+        await cargar();
         mensaje(`Solicitud de ${equipoElegido.nombre} registrada. Puedes verla en Mis solicitudes.`, 'success');
     });
 });

@@ -35,6 +35,7 @@ Las entidades están en `src/main/java/com/soa/proyecto/model/` y los repositori
 | fechaSolicitud | LocalDateTime | Obligatorio |
 | fechaAprobacion | LocalDateTime | Se llena al aprobar |
 | fechaEntrega | LocalDateTime | Se llena al entregar |
+| fechaLimite | LocalDateTime | Opcional; se calcula al entregar (`fechaEntrega + 3 días` por defecto, configurable) |
 | fechaDevolucion | LocalDateTime | Se llena al devolver |
 | observacion | String | Opcional, para daño en devolución |
 
@@ -77,12 +78,12 @@ Base: `/api`. El equipo puede ajustar estas rutas si lo acuerda y lo refleja aqu
 | PUT | /api/prestamos/{id}/devolver | ADMIN | Cambiar a DEVUELTO (con observación) |
 | GET | /api/prestamos | ADMIN | Historial completo (filtro opcional por estado) |
 
-`POST /api/prestamos` recibe JSON con `equipoId`; el `usuarioId` se toma de la sesión autenticada. La API devuelve `409` si el equipo no está disponible o si la solicitud ya no está en estado `SOLICITADO` al aprobarla o rechazarla.
+`POST /api/prestamos` recibe JSON con `equipoId`; el `usuarioId` se toma de la sesión autenticada. La API devuelve `409` si el equipo no está disponible, si el usuario ya tiene una solicitud o préstamo activo para ese equipo, si alcanzó el límite de 3 activos (`prestamos.limite-activos`), o si la solicitud ya no está en estado `SOLICITADO` al aprobarla o rechazarla.
 
 ### Entrega, devolución e historial (Emilio)
 
 - `PUT /api/prestamos/{id}/entregar`: sin cuerpo; exige `APROBADO`, registra
-  `fechaEntrega` y cambia a `ENTREGADO`. No entrega equipos desactivados.
+  `fechaEntrega` y `fechaLimite` (3 días por defecto vía `prestamos.dias-plazo`, solo informativo, sin multas) y cambia a `ENTREGADO`. No entrega equipos desactivados.
 - `PUT /api/prestamos/{id}/devolver`: cuerpo opcional
   `{"observacion":"Pantalla rayada"}`; exige `ENTREGADO`, registra
   `fechaDevolucion`, cambia a `DEVUELTO` y marca el equipo disponible.

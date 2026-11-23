@@ -62,6 +62,48 @@ class PrestamoServiceTest {
     }
 
     @Test
+    void crearSolicitudRechazaDuplicadoSiYaTieneSolicitudActiva() {
+        equipo.setDisponible(true);
+        when(prestamos.existsByUsuarioIdAndEquipoIdAndEstadoIn(eq(2L), eq(3L), anyCollection()))
+                .thenReturn(true);
+
+        ResponseStatusException error = assertThrows(
+                ResponseStatusException.class, () -> servicio.crearSolicitud("usuario", 3L));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verify(prestamos, never()).save(any());
+    }
+
+    @Test
+    void crearSolicitudRechazaSiAlcanzaLimiteDeSolicitudesActivas() {
+        equipo.setDisponible(true);
+        when(prestamos.existsByUsuarioIdAndEquipoIdAndEstadoIn(eq(2L), eq(3L), anyCollection()))
+                .thenReturn(false);
+        when(prestamos.countByUsuarioIdAndEstadoIn(eq(2L), anyCollection())).thenReturn(3L);
+
+        ResponseStatusException error = assertThrows(
+                ResponseStatusException.class, () -> servicio.crearSolicitud("usuario", 3L));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verify(prestamos, never()).save(any());
+    }
+
+    @Test
+    void crearSolicitudExitosoSiNoEsDuplicadoYNoSuperaLimite() {
+        equipo.setDisponible(true);
+        when(prestamos.existsByUsuarioIdAndEquipoIdAndEstadoIn(eq(2L), eq(3L), anyCollection()))
+                .thenReturn(false);
+        when(prestamos.countByUsuarioIdAndEstadoIn(eq(2L), anyCollection())).thenReturn(2L);
+
+        Prestamo creado = servicio.crearSolicitud("usuario", 3L);
+
+        assertEquals(EstadoPrestamo.SOLICITADO, creado.getEstado());
+        assertEquals(2L, creado.getUsuarioId());
+        assertEquals(3L, creado.getEquipoId());
+        verify(prestamos).save(any(Prestamo.class));
+    }
+
+    @Test
     void aprobarSolicitudFallaSiEquipoNoExisteEstaInactivoONoDisponible() {
         when(equipos.findEquipoById(3L)).thenReturn(Optional.empty());
         assertThrows(EquipoNoDisponibleException.class, () -> servicio.aprobar(1L));

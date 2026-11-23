@@ -35,7 +35,7 @@ class PrestamoServiceTest {
         prestamo.setEquipoId(equipo.getId());
         prestamo.setEstado(EstadoPrestamo.SOLICITADO);
 
-        when(usuarios.findByUsername("usuario")).thenReturn(Optional.of(usuario));
+        when(usuarios.findUsuarioByUsername("usuario")).thenReturn(Optional.of(usuario));
         when(equipos.findById(3L)).thenReturn(Optional.of(equipo));
         when(equipos.findEquipoById(3L)).thenReturn(Optional.of(equipo));
         when(prestamos.findByIdForUpdate(1L)).thenReturn(Optional.of(prestamo));

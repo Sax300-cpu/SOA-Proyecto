@@ -38,7 +38,8 @@ public class PrestamoService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El identificador del equipo debe ser un número positivo");
         }
 
-        Usuario usuario = usuarioRepository.findByUsername(username)
+        // El bloqueo por usuario abarca la validación y el guardado, también entre equipos distintos.
+        Usuario usuario = usuarioRepository.findUsuarioByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
         Equipo equipo = equipoRepository.findById(equipoId)
                 .orElseThrow(() -> new EquipoNoDisponibleException());

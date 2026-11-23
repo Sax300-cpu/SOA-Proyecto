@@ -2,7 +2,9 @@ package com.soa.proyecto.service;
 
 import com.soa.proyecto.dto.EquipoRequest;
 import com.soa.proyecto.model.Equipo;
+import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.repository.EquipoRepository;
+import com.soa.proyecto.repository.PrestamoRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -16,7 +18,8 @@ import static org.mockito.Mockito.*;
 
 class EquipoServiceTest {
     private final EquipoRepository repository = mock(EquipoRepository.class);
-    private final EquipoService servicio = new EquipoService(repository);
+    private final PrestamoRepository prestamos = mock(PrestamoRepository.class);
+    private final EquipoService servicio = new EquipoService(repository, prestamos);
 
     @Test
     void crearNormalizaDatosYGeneraCodigoAutomatico() {
@@ -100,6 +103,19 @@ class EquipoServiceTest {
         assertEquals(false, ocupado.getDisponible());
         assertEquals(1L, ocupado.getId());
         verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void desactivarRechazaEquipoAprobadoPendienteDeEntrega() {
+        Equipo reservado = equipo(true, false);
+        when(repository.findEquipoById(1L)).thenReturn(Optional.of(reservado));
+        when(prestamos.existsByEquipoIdAndEstado(1L, EstadoPrestamo.APROBADO)).thenReturn(true);
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class, () -> servicio.desactivar(1L));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        assertTrue(reservado.getActivo());
+        verify(repository, never()).save(any());
     }
 
     @Test

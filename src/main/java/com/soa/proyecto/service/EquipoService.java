@@ -2,7 +2,9 @@ package com.soa.proyecto.service;
 
 import com.soa.proyecto.dto.EquipoRequest;
 import com.soa.proyecto.model.Equipo;
+import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.repository.EquipoRepository;
+import com.soa.proyecto.repository.PrestamoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EquipoService {
     private final EquipoRepository repository;
+    private final PrestamoRepository prestamos;
 
     @Transactional(readOnly = true)
     public List<Equipo> listar(boolean soloDisponibles) {
@@ -54,6 +57,10 @@ public class EquipoService {
     @Transactional
     public Equipo desactivar(Long id) {
         Equipo equipo = repository.findEquipoById(id).orElseThrow(() -> noEncontrado());
+        if (Boolean.TRUE.equals(equipo.getActivo()) && prestamos.existsByEquipoIdAndEstado(id, EstadoPrestamo.APROBADO)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede desactivar un equipo con un préstamo aprobado pendiente de entrega");
+        }
         equipo.setActivo(false);
         return repository.save(equipo);
     }

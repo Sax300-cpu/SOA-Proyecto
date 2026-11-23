@@ -25,15 +25,15 @@ git checkout feature/mejoras-interfaz
 | Login y registro | Fondo blanco con el escudo de la FISEI (`static/img`). Barra superior con el escudo. | Kevin |
 | Inicio (`index.html`) | Ya no repite el menú: es un **panel de resumen**. Admin: equipos disponibles, pendientes, aprobados por entregar, entregados sin devolver, y las 5 solicitudes más recientes con **Aprobar/Rechazar**. Usuario: equipos disponibles, esperando aprobación, listos para retirar, en su poder, y sus últimos préstamos. | Luis, Kevin |
 | Catálogo | El formulario de registro/edición pasó a un **modal** (`<dialog>`). Barra de búsqueda y filtros ordenada y contador de equipos. | Manolo |
-| Código de equipo | Campo nuevo `codigo` en `Equipo` (único, formato `LETRAS-NÚMEROS`, ej. `LAP-001`). Validado en `EquipoService` (400 formato/vacío, 409 repetido). Se muestra en catálogo, historial, pendientes y mis solicitudes en lugar de `#id`. | Manolo, Luis, Emilio |
+| Código de equipo | Campo `codigo` en `Equipo` autogenerado en el servidor (`EQUIPO-001`, `EQUIPO-002`, ...). Se asigna también automáticamente al arrancar a equipos antiguos sin código. Se muestra en catálogo, historial, pendientes y mis solicitudes en lugar de `#id`. | Manolo, Luis, Emilio |
 | Historial | Aviso verde eliminado, tabla con el mismo estilo, filtro que se aplica al cambiar, fechas más cortas. | Emilio |
 | Estados | Badges de color (`etiquetaEstado` en `js/encabezado.js`). | Todos |
 
 ### Cambio de contrato de la API
-`POST /api/equipos` y `PUT /api/equipos/{id}` ahora requieren `codigo`:
+`POST /api/equipos` y `PUT /api/equipos/{id}` mantienen el contrato original de entrada (`nombre` y `descripcion`), y la respuesta incluye el `codigo` autogenerado (`EQUIPO-001`, `EQUIPO-002`, ...):
 
 ```json
-{"codigo":"LAP-001","nombre":"Laptop HP","descripcion":"Para clases"}
+{"nombre":"Laptop HP","descripcion":"Para clases"}
 ```
 
 Detalles en [catalogo-equipos.md](catalogo-equipos.md) y [contratos-api.md](contratos-api.md).

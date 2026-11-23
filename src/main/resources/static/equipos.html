@@ -68,11 +68,6 @@
         <form id="formEquipo" novalidate>
             <h2 id="tituloFormulario" class="h4 mb-3">Registrar equipo</h2>
             <div class="mb-3">
-                <label for="codigo" class="form-label">Código de inventario</label>
-                <input id="codigo" class="form-control text-uppercase" maxlength="10" placeholder="Ej. LAP-001" autocomplete="off" required>
-                <div class="form-text">Etiqueta única del equipo físico. Formato: letras, guion y número (LAP-001, PRO-002).</div>
-            </div>
-            <div class="mb-3">
                 <label for="nombre" class="form-label">Nombre</label>
                 <input id="nombre" class="form-control" maxlength="50" placeholder="Ej. Laptop HP ProBook" required>
             </div>
@@ -81,7 +76,7 @@
                 <textarea id="descripcion" class="form-control" maxlength="200" rows="2"></textarea>
             </div>
             <p id="errorEquipo" class="alert alert-danger py-2" role="alert" hidden></p>
-            <p class="text-body-secondary small">Los equipos nuevos quedan disponibles. Los préstamos controlan su disponibilidad.</p>
+            <p class="text-body-secondary small">El código de inventario (ej. EQUIPO-001) se genera automáticamente. Los préstamos controlan su disponibilidad.</p>
             <div class="d-flex flex-wrap justify-content-end gap-2">
                 <button id="cancelar" type="button" class="btn btn-outline-secondary">Cancelar</button>
                 <button id="guardar" type="submit" class="btn btn-primary">Registrar</button>

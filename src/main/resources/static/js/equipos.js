@@ -36,14 +36,13 @@ async function escribir(ruta, metodo, datos) {
 function abrirModalEquipo(equipo = null) {
     editando = equipo ? equipo.id : null;
     elemento('formEquipo').reset();
-    elemento('codigo').value = equipo?.codigo ?? '';
     elemento('nombre').value = equipo?.nombre ?? '';
     elemento('descripcion').value = equipo?.descripcion ?? '';
     elemento('tituloFormulario').textContent = equipo ? `Editar equipo ${equipo.codigo ?? '#' + equipo.id}` : 'Registrar equipo';
     elemento('guardar').textContent = equipo ? 'Guardar cambios' : 'Registrar';
     elemento('errorEquipo').hidden = true;
     elemento('modalEquipo').showModal();
-    elemento('codigo').focus();
+    elemento('nombre').focus();
 }
 
 function cerrarModalEquipo() {
@@ -173,18 +172,17 @@ elemento('formEquipo').addEventListener('submit', evento => {
     evento.preventDefault();
     const errorEquipo = elemento('errorEquipo');
     errorEquipo.hidden = true;
-    const codigo = elemento('codigo').value.trim();
     const nombre = elemento('nombre').value.trim();
     const descripcion = elemento('descripcion').value.trim();
-    if (!codigo || !nombre) {
-        errorEquipo.textContent = 'El código y el nombre del equipo son obligatorios.';
+    if (!nombre) {
+        errorEquipo.textContent = 'El nombre del equipo es obligatorio.';
         errorEquipo.hidden = false;
         return;
     }
     accion(async () => {
         try {
             await escribir(editando === null ? '/api/equipos' : `/api/equipos/${editando}`,
-                editando === null ? 'POST' : 'PUT', { codigo, nombre, descripcion });
+                editando === null ? 'POST' : 'PUT', { nombre, descripcion });
         } catch (error) {
             errorEquipo.textContent = error.message;
             errorEquipo.hidden = false;

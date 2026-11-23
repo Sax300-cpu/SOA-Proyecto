@@ -19,26 +19,26 @@ class EquipoServiceTest {
     private final EquipoService servicio = new EquipoService(repository);
 
     @Test
-    void crearNormalizaDatosYEstableceDisponibilidad() {
-        when(repository.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
-        Equipo creado = servicio.crear(new EquipoRequest("  lap-001 ", "  Laptop  ", "  Para clases  "));
-        assertEquals("LAP-001", creado.getCodigo());
+    void crearNormalizaDatosYGeneraCodigoAutomatico() {
+        when(repository.save(any())).thenAnswer(invocacion -> {
+            Equipo guardado = invocacion.getArgument(0);
+            if (guardado.getId() == null) guardado.setId(1L);
+            return guardado;
+        });
+        Equipo creado = servicio.crear(new EquipoRequest("  Laptop  ", "  Para clases  "));
+        assertEquals(1L, creado.getId());
+        assertEquals("EQUIPO-001", creado.getCodigo());
         assertEquals("Laptop", creado.getNombre());
         assertEquals("Para clases", creado.getDescripcion());
         assertEquals(true, creado.getActivo());
         assertEquals(true, creado.getDisponible());
-        assertNull(creado.getId());
     }
 
     @Test
     void validaNombreYLongitudesAntesDeGuardar() {
-        for (EquipoRequest datos : new EquipoRequest[]{null, new EquipoRequest("LAP-1", null, null),
-                new EquipoRequest("LAP-1", "   ", null), new EquipoRequest("LAP-1", "a".repeat(51), null),
-                new EquipoRequest("LAP-1", "Laptop", "a".repeat(201)),
-                new EquipoRequest(null, "Laptop", null), new EquipoRequest("  ", "Laptop", null),
-                new EquipoRequest("LAP 001", "Laptop", null), new EquipoRequest("KSDKAKDKASKAKD", "Laptop", null),
-                new EquipoRequest("LAP001", "Laptop", null), new EquipoRequest("LAP-12345", "Laptop", null),
-                new EquipoRequest("L-001", "Laptop", null)}) {
+        for (EquipoRequest datos : new EquipoRequest[]{null, new EquipoRequest(null, null),
+                new EquipoRequest("   ", null), new EquipoRequest("a".repeat(51), null),
+                new EquipoRequest("Laptop", "a".repeat(201))}) {
             assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ResponseStatusException.class,
                     () -> servicio.crear(datos)).getStatusCode());
         }
@@ -47,26 +47,25 @@ class EquipoServiceTest {
 
     @Test
     void admiteLimitesYDescripcionOpcional() {
+        when(repository.save(any())).thenAnswer(invocacion -> {
+            Equipo guardado = invocacion.getArgument(0);
+            if (guardado.getId() == null) guardado.setId(2L);
+            return guardado;
+        });
+        assertEquals(200, servicio.crear(new EquipoRequest("a".repeat(50), "b".repeat(200))).getDescripcion().length());
+        Equipo sinDesc = servicio.crear(new EquipoRequest("Laptop", null));
+        assertNull(sinDesc.getDescripcion());
+        assertEquals("EQUIPO-002", sinDesc.getCodigo());
+    }
+
+    @Test
+    void editarEquipoAntiguoSinCodigoLeAsignaUnoAutomatico() {
+        Equipo sinCodigo = new Equipo(5L, null, "Proyector", null, true, true);
+        when(repository.findEquipoById(5L)).thenReturn(Optional.of(sinCodigo));
         when(repository.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
-        assertEquals(200, servicio.crear(new EquipoRequest("ABCDE-9999", "a".repeat(50), "b".repeat(200))).getDescripcion().length());
-        assertNull(servicio.crear(new EquipoRequest("LAP-2", "Laptop", null)).getDescripcion());
-    }
-
-    @Test
-    void codigoRepetidoAlCrearDevuelve409() {
-        when(repository.existsByCodigo("LAP-001")).thenReturn(true);
-        assertEquals(HttpStatus.CONFLICT, assertThrows(ResponseStatusException.class,
-                () -> servicio.crear(new EquipoRequest("lap-001", "Laptop", null))).getStatusCode());
-        verify(repository, never()).save(any());
-    }
-
-    @Test
-    void codigoRepetidoDeOtroEquipoAlEditarDevuelve409() {
-        when(repository.findEquipoById(1L)).thenReturn(Optional.of(equipo(true, true)));
-        when(repository.existsByCodigoAndIdNot("PRO-001", 1L)).thenReturn(true);
-        assertEquals(HttpStatus.CONFLICT, assertThrows(ResponseStatusException.class,
-                () -> servicio.editar(1L, new EquipoRequest("PRO-001", "Laptop", null))).getStatusCode());
-        verify(repository, never()).save(any());
+        Equipo editado = servicio.editar(5L, new EquipoRequest("Proyector Epson", "Aula 3"));
+        assertEquals("EQUIPO-005", editado.getCodigo());
+        assertEquals("Proyector Epson", editado.getNombre());
     }
 
     @Test
@@ -83,10 +82,11 @@ class EquipoServiceTest {
         Equipo ocupado = equipo(true, false);
         when(repository.findEquipoById(1L)).thenReturn(Optional.of(ocupado));
         when(repository.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
-        Equipo editado = servicio.editar(1L, new EquipoRequest("LAP-001", "Nuevo nombre", null));
+        Equipo editado = servicio.editar(1L, new EquipoRequest("Nuevo nombre", null));
         assertEquals(false, editado.getDisponible());
         assertEquals(true, editado.getActivo());
         assertEquals(1L, editado.getId());
+        assertEquals("EQUIPO-001", editado.getCodigo());
     }
 
     @Test
@@ -108,11 +108,11 @@ class EquipoServiceTest {
         when(repository.findEquipoById(1L)).thenReturn(Optional.of(equipo(false, true)));
         assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class, () -> servicio.detalle(1L)).getStatusCode());
         assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class,
-                () -> servicio.editar(1L, new EquipoRequest("LAP-001", "Laptop", null))).getStatusCode());
+                () -> servicio.editar(1L, new EquipoRequest("Laptop", null))).getStatusCode());
         assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class, () -> servicio.desactivar(9L)).getStatusCode());
     }
 
     private Equipo equipo(boolean activo, boolean disponible) {
-        return new Equipo(1L, "LAP-001", "Laptop", null, disponible, activo);
+        return new Equipo(1L, "EQUIPO-001", "Laptop", null, disponible, activo);
     }
 }

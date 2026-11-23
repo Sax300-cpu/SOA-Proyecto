@@ -13,8 +13,4 @@ public interface EquipoRepository extends JpaRepository<Equipo, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Equipo> findEquipoById(Long id);
-
-    boolean existsByCodigo(String codigo);
-
-    boolean existsByCodigoAndIdNot(String codigo, Long id);
 }

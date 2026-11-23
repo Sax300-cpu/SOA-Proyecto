@@ -22,10 +22,10 @@ El ADMIN puede registrar, editar y desactivar. El USUARIO ve por defecto solo di
 Cuerpo de alta/edición:
 
 ```json
-{"codigo":"PRO-001","nombre":"Proyector","descripcion":"Para aulas"}
+{"nombre":"Proyector","descripcion":"Para aulas"}
 ```
 
-- Código obligatorio y único, con formato `LETRAS-NÚMEROS` (2 a 5 letras, guion y 1 a 4 dígitos, ej. `LAP-001`); se guarda en mayúsculas. Un código como `KSDKAKDKASKAKD` o `LAP001` responde 400. Si ya existe en otro equipo responde 409. Los equipos antiguos sin código deben recibir uno al editarlos.
+- Código autogenerado y único en el servidor con formato `EQUIPO-001`, `EQUIPO-002`, ... a partir del ID del equipo. No se recibe ni se edita desde el cliente; los equipos antiguos sin código reciben uno automáticamente al arrancar o al editarse.
 - Nombre obligatorio, no solo espacios, máximo 50 caracteres después de quitar espacios externos.
 - Descripción opcional, máximo 200 caracteres después de quitar espacios externos.
 - Alta establece `activo=true` y `disponible=true`. El cliente no puede cambiar ID, activo ni disponibilidad en alta/edición.

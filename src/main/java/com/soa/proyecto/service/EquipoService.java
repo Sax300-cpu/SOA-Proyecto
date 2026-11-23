@@ -36,13 +36,18 @@ public class EquipoService {
         aplicarDatos(equipo, datos);
         equipo.setActivo(true);
         equipo.setDisponible(true);
-        return repository.save(equipo);
+        Equipo guardado = repository.save(equipo);
+        guardado.setCodigo(generarCodigo(guardado.getId()));
+        return repository.save(guardado);
     }
 
     @Transactional
     public Equipo editar(Long id, EquipoRequest datos) {
         Equipo equipo = exigirActivo(repository.findEquipoById(id).orElseThrow(() -> noEncontrado()));
         aplicarDatos(equipo, datos);
+        if (equipo.getCodigo() == null || equipo.getCodigo().isBlank()) {
+            equipo.setCodigo(generarCodigo(equipo.getId()));
+        }
         return repository.save(equipo);
     }
 
@@ -57,35 +62,19 @@ public class EquipoService {
         if (datos == null || datos.nombre() == null || datos.nombre().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre es obligatorio");
         }
-        String codigo = validarCodigo(datos.codigo(), equipo.getId());
         String nombre = datos.nombre().strip();
         String descripcion = datos.descripcion() == null ? null : datos.descripcion().strip();
         if (nombre.length() > 50 || (descripcion != null && descripcion.length() > 200)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "El nombre admite hasta 50 caracteres y la descripción hasta 200");
         }
-        equipo.setCodigo(codigo);
         equipo.setNombre(nombre);
         equipo.setDescripcion(descripcion);
     }
 
-    // El código se guarda en mayúsculas con el formato LETRAS-NÚMEROS (ej. LAP-001) y debe ser único.
-    private String validarCodigo(String texto, Long idActual) {
-        if (texto == null || texto.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El código es obligatorio");
-        }
-        String codigo = texto.strip().toUpperCase();
-        if (!codigo.matches("[A-Z]{2,5}-[0-9]{1,4}")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El código debe tener el formato LETRAS-NÚMEROS, por ejemplo LAP-001 (2 a 5 letras, guion y 1 a 4 dígitos)");
-        }
-        boolean repetido = idActual == null
-                ? repository.existsByCodigo(codigo)
-                : repository.existsByCodigoAndIdNot(codigo, idActual);
-        if (repetido) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un equipo con el código " + codigo);
-        }
-        return codigo;
+    // Genera un código de inventario legible y único a partir del ID autoincremental (ej. EQUIPO-001).
+    public static String generarCodigo(Long id) {
+        return id == null ? null : String.format("EQUIPO-%03d", id);
     }
 
     private Equipo exigirActivo(Equipo equipo) {

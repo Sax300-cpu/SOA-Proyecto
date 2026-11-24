@@ -44,9 +44,11 @@
             celda(fila, `#${prestamo.id}`);
             celda(fila, nombreEquipo(prestamo.equipoId));
             if (admin) celda(fila, `#${prestamo.usuarioId}`);
-            celda(fila, null).replaceChildren(etiquetaEstado(prestamo.estado));
+            celda(fila, null).replaceChildren(etiquetaEstadoPrestamo(prestamo));
             celda(fila, fecha(prestamo.fechaSolicitud));
             celda(fila, fecha(prestamo.fechaEntrega));
+            const limiteCelda = celda(fila, fecha(prestamo.fechaLimite));
+            if (estaVencido(prestamo)) limiteCelda.className = 'text-danger fw-semibold';
             celda(fila, fecha(prestamo.fechaDevolucion));
             celda(fila, prestamo.observacion);
             if (admin) {
@@ -143,6 +145,7 @@
                 : 'Consulta únicamente tus préstamos y las fechas de entrega y devolución.';
             porId('usuario-col').hidden = !admin;
             porId('acciones-col').hidden = !admin;
+            porId('notaDevolucion').hidden = admin;
             porId('contenido').hidden = false;
             await cargar();
         } catch (error) {

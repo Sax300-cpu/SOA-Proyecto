@@ -25,15 +25,15 @@ git checkout feature/mejoras-interfaz
 | Login y registro | Fondo blanco con el escudo de la FISEI (`static/img`). Barra superior con el escudo. | Kevin |
 | Inicio (`index.html`) | Ya no repite el menú: es un **panel de resumen**. Admin: equipos disponibles, pendientes, aprobados por entregar, entregados sin devolver, y las 5 solicitudes más recientes con **Aprobar/Rechazar**. Usuario: equipos disponibles, esperando aprobación, listos para retirar, en su poder, y sus últimos préstamos. | Luis, Kevin |
 | Catálogo | El formulario de registro/edición pasó a un **modal** (`<dialog>`). Barra de búsqueda y filtros ordenada y contador de equipos. | Manolo |
-| Código de equipo | Campo nuevo `codigo` en `Equipo` (único, formato `LETRAS-NÚMEROS`, ej. `LAP-001`). Validado en `EquipoService` (400 formato/vacío, 409 repetido). Se muestra en catálogo, historial, pendientes y mis solicitudes en lugar de `#id`. | Manolo, Luis, Emilio |
+| Código de equipo | Campo `codigo` en `Equipo` autogenerado en el servidor (`EQUIPO-001`, `EQUIPO-002`, ...). Se asigna también automáticamente al arrancar a equipos antiguos sin código. Se muestra en catálogo, historial, pendientes y mis solicitudes en lugar de `#id`. | Manolo, Luis, Emilio |
 | Historial | Aviso verde eliminado, tabla con el mismo estilo, filtro que se aplica al cambiar, fechas más cortas. | Emilio |
 | Estados | Badges de color (`etiquetaEstado` en `js/encabezado.js`). | Todos |
 
 ### Cambio de contrato de la API
-`POST /api/equipos` y `PUT /api/equipos/{id}` ahora requieren `codigo`:
+`POST /api/equipos` y `PUT /api/equipos/{id}` mantienen el contrato original de entrada (`nombre` y `descripcion`), y la respuesta incluye el `codigo` autogenerado (`EQUIPO-001`, `EQUIPO-002`, ...):
 
 ```json
-{"codigo":"LAP-001","nombre":"Laptop HP","descripcion":"Para clases"}
+{"nombre":"Laptop HP","descripcion":"Para clases"}
 ```
 
 Detalles en [catalogo-equipos.md](catalogo-equipos.md) y [contratos-api.md](contratos-api.md).
@@ -52,29 +52,23 @@ Siguiendo la regla del equipo, se avisa: `Equipo`, `EquipoRepository`, `EquipoSe
 - [ ] Usuario: el historial y «Mis solicitudes» muestran el código y el nombre del equipo.
 - [ ] Probar en el móvil (o con el navegador a 375 px de ancho).
 
-## 4. Pendientes y decisiones (aún NO implementados)
+## 4. Pendientes y decisiones (implementados en `feature/mejoras-prestamos`)
 
-Cosas que se detectaron al probar y que conviene decidir entre todos.
+Reglas acordadas e implementadas en la rama `feature/mejoras-prestamos` (con límite de **3** activos y plazo de **3 días**):
 
-### 4.1 Solicitudes duplicadas (error a corregir)
-Hoy un usuario puede solicitar varias veces el mismo equipo mientras siga disponible, y el admin ve las solicitudes repetidas.
-- **Propuesta:** en `PrestamoService.crearSolicitud`, responder 409 si el usuario ya tiene una solicitud activa (SOLICITADO, APROBADO o ENTREGADO) de ese equipo; en el catálogo, mostrar «Solicitud en curso» desactivado.
-- **Dueño:** Luis (toca `PrestamoService` y `PrestamoRepository`).
+### 4.1 Solicitudes duplicadas — Implementado
+En `PrestamoService.crearSolicitud`, responde `409` si el usuario ya tiene una solicitud activa (`SOLICITADO`, `APROBADO` o `ENTREGADO`) de ese equipo; en el catálogo (`/js/equipos.js`), muestra «Solicitud en curso» desactivado.
 
-### 4.2 Límite de solicitudes por usuario
-- **Propuesta:** máximo **3 solicitudes activas** por usuario a la vez (cantidad configurable en `application.properties`). Al superarlo, 409 con un mensaje claro.
-- **Decisión pendiente:** ¿3 es un buen número para el alcance del proyecto?
-- **Dueño:** Luis.
+### 4.2 Límite de solicitudes por usuario — Implementado (máx. 3)
+Máximo **3 solicitudes/préstamos activos** por usuario a la vez (`prestamos.limite-activos=3` en `application.properties`). Al superarlo, responde `409` con un mensaje claro.
 
-### 4.3 Plazo de devolución
-Hace el sistema más realista: un préstamo sin fecha de vuelta no se puede controlar.
-- **Propuesta:** al **entregar**, se guarda `fechaLimite = hoy + N días` (N configurable, por ejemplo 3). Es una columna nueva y opcional en `Prestamo`, así que no hay que tocar enums ni la base a mano.
-- **Estado «Vencido»:** se calcula (ENTREGADO y fecha límite superada), sin nuevo valor en `EstadoPrestamo`. Se muestra en rojo en el historial y en el panel del admin («Entregados vencidos»); el usuario lo ve en «En tu poder».
+### 4.3 Plazo de devolución — Implementado (3 días, sin multas)
+Al **entregar** en `DevolucionService.entregar`, se guarda `fechaLimite = hoy + 3 días` (`prestamos.dias-plazo=3` en `application.properties`). Es una columna nueva y opcional (`preFechaLimite`) en `Prestamo`, sin tocar el enum `EstadoPrestamo`.
+- **Estado visual «Vencido»:** se calcula en cliente (`ENTREGADO` y `fechaLimite` superada). Se muestra badge rojo en historial, mis solicitudes y panel de inicio (Admin: alerta y «Entregados (N vencidos)»; Usuario: indicador en «En tu poder»).
 - **Alcance:** solo informativo. **No hay multas ni cobros**, tal como exige el proyecto.
-- **Dueños:** Luis (`Prestamo`) y Emilio (entrega e historial).
 
-### 4.4 Cómo devuelve un usuario
-La devolución la registra solo el ADMIN cuando recibe el equipo físico. Falta una nota en pantalla que lo explique al usuario («Para devolver, entrega el equipo al administrador»).
+### 4.4 Cómo devuelve un usuario — Implementado
+Se muestra un aviso informativo en `/index.html` (panel de usuario), `/mis-solicitudes.html` y `/devoluciones.html` explicando que la devolución la registra el administrador al recibir el equipo físico.
 
 ### Orden sugerido
 1. Probar esta rama y corregir lo que encuentren.

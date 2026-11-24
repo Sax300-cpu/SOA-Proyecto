@@ -94,9 +94,9 @@ Antes de programar en paralelo, el grupo debe dejar claros estos puntos:
 | Panel de inicio por rol (resumen + aprobar/rechazar) | Hecho | Luis, Kevin |
 | Catálogo con modal y código de equipo (`LAP-001`) | Hecho | Manolo |
 | Historial más limpio y badges de estado | Hecho | Emilio |
-| Corregir solicitudes duplicadas del mismo usuario | Pendiente | Luis |
-| Límite de solicitudes activas por usuario | Pendiente (decidir número) | Luis |
-| Plazo de devolución y estado «Vencido» (sin multas) | Pendiente (decidir días) | Luis, Emilio |
+| Corregir solicitudes duplicadas del mismo usuario | Hecho (`feature/mejoras-prestamos`) | Luis |
+| Límite de solicitudes activas por usuario (3) | Hecho (`feature/mejoras-prestamos`) | Luis |
+| Plazo de devolución (3 días) y estado visual «Vencido» (sin multas) | Hecho (`feature/mejoras-prestamos`) | Luis, Emilio |
 
 **Criterio de salida:** el grupo prueba la rama con la lista de comprobación del plan, acuerda las decisiones pendientes y se fusiona en `develop` con pull request.
 

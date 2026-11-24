@@ -25,6 +25,26 @@ function etiquetaEstado(estado) {
     return etiqueta;
 }
 
+// Indica si un préstamo entregado ya superó su fecha límite de devolución.
+function estaVencido(prestamo) {
+    return prestamo?.estado === 'ENTREGADO'
+        && Boolean(prestamo.fechaLimite)
+        && new Date(prestamo.fechaLimite) < new Date();
+}
+
+// Devuelve la insignia de estado del préstamo y agrega "Vencido" en rojo cuando corresponde.
+function etiquetaEstadoPrestamo(prestamo) {
+    const base = etiquetaEstado(prestamo?.estado);
+    if (!estaVencido(prestamo)) return base;
+    const grupo = document.createElement('span');
+    grupo.className = 'd-inline-flex flex-wrap gap-1 align-items-center';
+    const vencido = document.createElement('span');
+    vencido.className = 'badge rounded-pill text-bg-danger';
+    vencido.textContent = 'Vencido';
+    grupo.append(base, vencido);
+    return grupo;
+}
+
 // Carga el catálogo una vez y devuelve una función id -> "CÓDIGO · Nombre" (o "#id" si no está activo).
 async function cargarNombresEquipos() {
     const nombres = new Map();

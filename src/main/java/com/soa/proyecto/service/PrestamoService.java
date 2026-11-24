@@ -8,6 +8,7 @@ import com.soa.proyecto.repository.EquipoRepository;
 import com.soa.proyecto.repository.PrestamoRepository;
 import com.soa.proyecto.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +22,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PrestamoService {
 
+    private static final List<EstadoPrestamo> ESTADOS_ACTIVOS = List.of(
+            EstadoPrestamo.SOLICITADO, EstadoPrestamo.APROBADO, EstadoPrestamo.ENTREGADO);
+
     private final PrestamoRepository prestamoRepository;
     private final UsuarioRepository usuarioRepository;
     private final EquipoRepository equipoRepository;
+
+    @Value("${prestamos.limite-activos:3}")
+    private int limiteActivos = 3;
 
     @Transactional
     public Prestamo crearSolicitud(String username, Long equipoId) {
@@ -31,13 +38,23 @@ public class PrestamoService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El identificador del equipo debe ser un número positivo");
         }
 
-        Usuario usuario = usuarioRepository.findByUsername(username)
+        // El bloqueo por usuario abarca la validación y el guardado, también entre equipos distintos.
+        Usuario usuario = usuarioRepository.findUsuarioByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
         Equipo equipo = equipoRepository.findById(equipoId)
                 .orElseThrow(() -> new EquipoNoDisponibleException());
 
         if (!Boolean.TRUE.equals(equipo.getActivo()) || !Boolean.TRUE.equals(equipo.getDisponible())) {
             throw new EquipoNoDisponibleException();
+        }
+        if (prestamoRepository.existsByUsuarioIdAndEquipoIdAndEstadoIn(
+                usuario.getId(), equipo.getId(), ESTADOS_ACTIVOS)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Ya tienes una solicitud o préstamo activo para este equipo");
+        }
+        if (prestamoRepository.countByUsuarioIdAndEstadoIn(usuario.getId(), ESTADOS_ACTIVOS) >= limiteActivos) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Has alcanzado el límite de " + limiteActivos + " solicitudes o préstamos activos");
         }
 
         Prestamo prestamo = new Prestamo();

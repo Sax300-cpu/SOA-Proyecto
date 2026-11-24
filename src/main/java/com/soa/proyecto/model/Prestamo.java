@@ -38,6 +38,9 @@ public class Prestamo {
     @Column(name = "preFechaEntrega")
     private LocalDateTime fechaEntrega;
 
+    @Column(name = "preFechaLimite")
+    private LocalDateTime fechaLimite;
+
     @Column(name = "preFechaDevolucion")
     private LocalDateTime fechaDevolucion;
 

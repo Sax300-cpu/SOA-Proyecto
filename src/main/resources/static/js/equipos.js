@@ -7,6 +7,8 @@ let ocupado = false;
 let equipoElegido = null;
 let equipos = [];
 let busqueda = '';
+let equiposSolicitados = new Set();
+const ESTADOS_ACTIVOS = new Set(['SOLICITADO', 'APROBADO', 'ENTREGADO']);
 
 function mensaje(texto, tipo = 'danger') {
     elemento('mensaje').textContent = texto;
@@ -36,14 +38,13 @@ async function escribir(ruta, metodo, datos) {
 function abrirModalEquipo(equipo = null) {
     editando = equipo ? equipo.id : null;
     elemento('formEquipo').reset();
-    elemento('codigo').value = equipo?.codigo ?? '';
     elemento('nombre').value = equipo?.nombre ?? '';
     elemento('descripcion').value = equipo?.descripcion ?? '';
     elemento('tituloFormulario').textContent = equipo ? `Editar equipo ${equipo.codigo ?? '#' + equipo.id}` : 'Registrar equipo';
     elemento('guardar').textContent = equipo ? 'Guardar cambios' : 'Registrar';
     elemento('errorEquipo').hidden = true;
     elemento('modalEquipo').showModal();
-    elemento('codigo').focus();
+    elemento('nombre').focus();
 }
 
 function cerrarModalEquipo() {
@@ -68,12 +69,26 @@ async function accion(tarea) {
         mensaje(error.message);
     } finally {
         ocupado = false;
-        document.querySelectorAll('main button').forEach(boton => { boton.disabled = false; });
+        document.querySelectorAll('main button').forEach(boton => {
+            if (!boton.dataset.fijoDeshabilitado) boton.disabled = false;
+        });
     }
 }
 
 async function cargar() {
-    equipos = await peticion(`/api/equipos?disponibles=${elemento('disponibles').checked}`);
+    if (administrador) {
+        equipos = await peticion(`/api/equipos?disponibles=${elemento('disponibles').checked}`);
+        equiposSolicitados = new Set();
+    } else {
+        const [listaEquipos, misSolicitudes] = await Promise.all([
+            peticion(`/api/equipos?disponibles=${elemento('disponibles').checked}`),
+            peticion('/api/prestamos/mios').catch(() => [])
+        ]);
+        equipos = listaEquipos;
+        equiposSolicitados = new Set(
+            misSolicitudes.filter(p => ESTADOS_ACTIVOS.has(p.estado)).map(p => p.equipoId)
+        );
+    }
     mostrarEquipos();
 }
 
@@ -121,19 +136,29 @@ function mostrarEquipos() {
             });
             acciones.append(editar, desactivar);
         } else if (equipo.disponible) {
-            const solicitar = document.createElement('button');
-            solicitar.type = 'button';
-            solicitar.className = 'btn btn-sm btn-outline-primary';
-            solicitar.textContent = 'Solicitar equipo';
-            solicitar.setAttribute('aria-label', `Solicitar equipo ${equipo.nombre}`);
-            solicitar.addEventListener('click', () => {
-                equipoElegido = equipo;
-                elemento('equipoSolicitud').textContent = equipo.codigo ? `${equipo.codigo} · ${equipo.nombre}` : equipo.nombre;
-                elemento('descripcionSolicitud').textContent = equipo.descripcion ?? '';
-                elemento('errorSolicitud').hidden = true;
-                elemento('solicitar').showModal();
-            });
-            acciones.append(solicitar);
+            if (equiposSolicitados.has(equipo.id)) {
+                const enCurso = document.createElement('button');
+                enCurso.type = 'button';
+                enCurso.className = 'btn btn-sm btn-outline-secondary';
+                enCurso.textContent = 'Solicitud en curso';
+                enCurso.disabled = true;
+                enCurso.dataset.fijoDeshabilitado = 'true';
+                acciones.append(enCurso);
+            } else {
+                const solicitar = document.createElement('button');
+                solicitar.type = 'button';
+                solicitar.className = 'btn btn-sm btn-outline-primary';
+                solicitar.textContent = 'Solicitar equipo';
+                solicitar.setAttribute('aria-label', `Solicitar equipo ${equipo.nombre}`);
+                solicitar.addEventListener('click', () => {
+                    equipoElegido = equipo;
+                    elemento('equipoSolicitud').textContent = equipo.codigo ? `${equipo.codigo} · ${equipo.nombre}` : equipo.nombre;
+                    elemento('descripcionSolicitud').textContent = equipo.descripcion ?? '';
+                    elemento('errorSolicitud').hidden = true;
+                    elemento('solicitar').showModal();
+                });
+                acciones.append(solicitar);
+            }
         } else {
             acciones.textContent = 'No disponible para solicitar';
         }
@@ -165,6 +190,7 @@ elemento('formSolicitar').addEventListener('submit', evento => {
             return;
         }
         elemento('solicitar').close();
+        await cargar();
         mensaje(`Solicitud de ${equipoElegido.nombre} registrada. Puedes verla en Mis solicitudes.`, 'success');
     });
 });
@@ -173,18 +199,17 @@ elemento('formEquipo').addEventListener('submit', evento => {
     evento.preventDefault();
     const errorEquipo = elemento('errorEquipo');
     errorEquipo.hidden = true;
-    const codigo = elemento('codigo').value.trim();
     const nombre = elemento('nombre').value.trim();
     const descripcion = elemento('descripcion').value.trim();
-    if (!codigo || !nombre) {
-        errorEquipo.textContent = 'El código y el nombre del equipo son obligatorios.';
+    if (!nombre) {
+        errorEquipo.textContent = 'El nombre del equipo es obligatorio.';
         errorEquipo.hidden = false;
         return;
     }
     accion(async () => {
         try {
             await escribir(editando === null ? '/api/equipos' : `/api/equipos/${editando}`,
-                editando === null ? 'POST' : 'PUT', { codigo, nombre, descripcion });
+                editando === null ? 'POST' : 'PUT', { nombre, descripcion });
         } catch (error) {
             errorEquipo.textContent = error.message;
             errorEquipo.hidden = false;

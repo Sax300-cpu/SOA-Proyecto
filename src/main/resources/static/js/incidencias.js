@@ -83,10 +83,17 @@
         porId('vacio').hidden = visibles.length !== 0;
     }
 
+    async function leer(ruta) {
+        const respuesta = await fetchConSesion(ruta);
+        const datos = await respuesta.json().catch(() => null);
+        if (!respuesta.ok) throw new Error(datos?.error || `Error HTTP ${respuesta.status}`);
+        return datos;
+    }
+
     async function cargar(aviso = '', reiniciar = true) {
         if (aviso) mensaje(aviso, 'success'); else porId('mensaje').hidden = true;
         try {
-            const devueltos = await (await fetchConSesion('/api/prestamos?estado=DEVUELTO')).json();
+            const devueltos = await leer('/api/prestamos?estado=DEVUELTO');
             incidencias = devueltos
                 .filter(p => ['CON_DETALLES', 'DANADO'].includes(p.condicionDevolucion))
                 .sort((a, b) => b.id - a.id);

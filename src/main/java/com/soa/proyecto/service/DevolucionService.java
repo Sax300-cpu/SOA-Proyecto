@@ -29,13 +29,18 @@ public class DevolucionService {
     private final UsuarioRepository usuarios;
     private final EntityManager entityManager;
 
+    private static final List<EstadoPrestamo> ESTADOS_EN_USO = List.of(
+            EstadoPrestamo.APROBADO, EstadoPrestamo.ENTREGADO);
+
     @Value("${prestamos.dias-plazo:3}")
     private int diasPlazo = 3;
 
+    @Transactional
     public Prestamo entregar(Long id) {
         return entregar(id, null);
     }
 
+    @Transactional
     public Prestamo entregar(Long id, String observacion) {
         return entregar(id, observacion, null);
     }
@@ -60,12 +65,14 @@ public class DevolucionService {
         prestamo.setFechaEntrega(ahora);
         int horas = plazoHoras != null ? plazoHoras
                 : prestamo.getPlazoHoras() != null ? prestamo.getPlazoHoras() : diasPlazo * 24;
+        prestamo.setPlazoHoras(horas);
         prestamo.setFechaLimite(ahora.plusHours(horas));
         prestamo.setObservacionEntrega(texto);
         equipos.save(equipo);
         return prestamos.save(prestamo);
     }
 
+    @Transactional
     public Prestamo devolver(Long id, String observacion) {
         return devolver(id, observacion, null);
     }
@@ -88,8 +95,9 @@ public class DevolucionService {
         prestamo.setObservacion(texto);
         prestamo.setCondicionDevolucion(condicion);
         prestamo.setIncidenciaAtendida(condicion == CondicionEquipo.BUEN_ESTADO ? null : false);
-        // La devolución no reactiva equipos desactivados por el administrador.
-        equipo.setDisponible(condicion != CondicionEquipo.DANADO);
+        // La devolución no reactiva equipos desactivados por el administrador ni libera equipos con otro bloqueo activo.
+        equipo.setDisponible(condicion != CondicionEquipo.DANADO
+                && !tieneBloqueoEnOtroPrestamo(equipo.getId(), prestamo.getId()));
         equipos.save(equipo);
         return prestamos.save(prestamo);
     }
@@ -123,16 +131,26 @@ public class DevolucionService {
                 // El equipo ya volvió al catálogo; solo se cierra el aviso.
             }
             case "REPARADO" -> {
-                equipo.setDisponible(Boolean.TRUE.equals(equipo.getActivo()));
+                boolean libre = Boolean.TRUE.equals(equipo.getActivo())
+                        && !tieneBloqueoEnOtroPrestamo(equipo.getId(), prestamo.getId());
+                equipo.setDisponible(libre);
                 equipos.save(equipo);
             }
             case "BAJA" -> {
+                if (prestamos.existsByEquipoIdAndIdNotAndEstadoIn(equipo.getId(), prestamo.getId(), ESTADOS_EN_USO)) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                            "No se puede dar de baja un equipo con un préstamo aprobado o entregado");
+                }
                 equipo.setActivo(false);
                 equipo.setDisponible(false);
                 equipos.save(equipo);
             }
             default -> {
                 // MANTENIMIENTO: el equipo sale del catálogo y la incidencia sigue abierta.
+                if (prestamos.existsByEquipoIdAndIdNotAndEstadoIn(equipo.getId(), prestamo.getId(), ESTADOS_EN_USO)) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                            "No se puede enviar a mantenimiento un equipo con un préstamo aprobado o entregado");
+                }
                 equipo.setDisponible(false);
                 equipos.save(equipo);
                 prestamo.setEnMantenimiento(true);
@@ -142,6 +160,14 @@ public class DevolucionService {
         prestamo.setEnMantenimiento(false);
         prestamo.setIncidenciaAtendida(true);
         return prestamos.save(prestamo);
+    }
+
+    // Indica si otro préstamo del mismo equipo lo mantiene ocupado, dañado sin resolver o en mantenimiento.
+    private boolean tieneBloqueoEnOtroPrestamo(Long equipoId, Long prestamoExcluidoId) {
+        return prestamos.existsByEquipoIdAndIdNotAndEstadoIn(equipoId, prestamoExcluidoId, ESTADOS_EN_USO)
+                || prestamos.existsByEquipoIdAndIdNotAndCondicionDevolucionAndIncidenciaAtendida(
+                        equipoId, prestamoExcluidoId, CondicionEquipo.DANADO, false)
+                || prestamos.existsByEquipoIdAndIdNotAndEnMantenimientoTrue(equipoId, prestamoExcluidoId);
     }
 
     private String limpiarObservacion(String observacion) {

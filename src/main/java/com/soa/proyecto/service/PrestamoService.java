@@ -1,5 +1,6 @@
 package com.soa.proyecto.service;
 
+import com.soa.proyecto.model.CondicionEquipo;
 import com.soa.proyecto.model.Equipo;
 import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.model.Prestamo;
@@ -24,6 +25,9 @@ public class PrestamoService {
 
     private static final List<EstadoPrestamo> ESTADOS_ACTIVOS = List.of(
             EstadoPrestamo.SOLICITADO, EstadoPrestamo.APROBADO, EstadoPrestamo.ENTREGADO);
+
+    private static final List<EstadoPrestamo> ESTADOS_EN_USO = List.of(
+            EstadoPrestamo.APROBADO, EstadoPrestamo.ENTREGADO);
 
     private final PrestamoRepository prestamoRepository;
     private final UsuarioRepository usuarioRepository;
@@ -95,6 +99,7 @@ public class PrestamoService {
         return prestamoRepository.findByEstado(estado);
     }
 
+    @Transactional
     public Prestamo aprobar(Long id) {
         return aprobar(id, null);
     }
@@ -145,7 +150,13 @@ public class PrestamoService {
         }
         Equipo equipo = equipoRepository.findEquipoById(prestamo.getEquipoId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo no encontrado"));
-        equipo.setDisponible(Boolean.TRUE.equals(equipo.getActivo()));
+        boolean bloqueadoPorOtro = prestamoRepository.existsByEquipoIdAndIdNotAndEstadoIn(
+                equipo.getId(), prestamo.getId(), ESTADOS_EN_USO)
+                || prestamoRepository.existsByEquipoIdAndIdNotAndCondicionDevolucionAndIncidenciaAtendida(
+                        equipo.getId(), prestamo.getId(), CondicionEquipo.DANADO, false)
+                || prestamoRepository.existsByEquipoIdAndIdNotAndEnMantenimientoTrue(
+                        equipo.getId(), prestamo.getId());
+        equipo.setDisponible(Boolean.TRUE.equals(equipo.getActivo()) && !bloqueadoPorOtro);
         equipoRepository.save(equipo);
 
         prestamo.setEstado(EstadoPrestamo.RECHAZADO);

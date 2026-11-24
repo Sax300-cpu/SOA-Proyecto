@@ -6,12 +6,12 @@ Resumen de lo que se hizo el 23 de noviembre sobre `develop` (f8b0208), qué hay
 
 ```powershell
 git fetch origin
-git checkout feature/mejoras-interfaz
+git checkout feature/codigo-por-prefijo
 ```
 
 1. Iniciar MySQL desde XAMPP.
 2. Los equipos que ya existan reciben un código de respaldo (`EQUIPO-001`…) al arrancar la aplicación; no hace falta ningún SQL.
-3. `.\mvnw.cmd test` (deben pasar 45 pruebas) y luego `.\mvnw.cmd spring-boot:run`.
+3. `.\mvnw.cmd test` (deben pasar 93 pruebas) y luego `.\mvnw.cmd spring-boot:run`.
 4. Abrir `http://localhost:8080` con las cuentas de demostración: `admin / admin123` (ADMIN) y `usuario / usuario123` (USUARIO).
 
 ## 2. Qué cambió y a quién le toca revisarlo

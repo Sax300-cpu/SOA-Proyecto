@@ -310,9 +310,15 @@ elemento('nombre').addEventListener('input', () => {
 elemento('prefijo').addEventListener('input', () => {
     const campo = elemento('prefijo');
     campo.value = campo.value.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
-    // Si lo vacía, vuelve a sugerirse desde el nombre.
     prefijoManual = campo.value !== '';
-    if (!prefijoManual) campo.value = sugerirPrefijo(elemento('nombre').value);
+});
+elemento('prefijo').addEventListener('blur', () => {
+    const campo = elemento('prefijo');
+    // Si lo dejó vacío al salir del campo, vuelve a sugerirse desde el nombre.
+    if (editando === null && campo.value === '') {
+        prefijoManual = false;
+        campo.value = sugerirPrefijo(elemento('nombre').value);
+    }
 });
 elemento('cancelar').addEventListener('click', cerrarModalEquipo);
 elemento('abrirRegistro').addEventListener('click', () => abrirModalEquipo());

@@ -36,6 +36,15 @@ public interface PrestamoRepository extends JpaRepository<Prestamo, Long> {
     // ¿El equipo está actualmente en mantenimiento por una incidencia?
     boolean existsByEquipoIdAndEnMantenimientoTrue(Long equipoId);
 
+    // Mismas comprobaciones excluyendo el préstamo que se está devolviendo, anulando o resolviendo.
+    boolean existsByEquipoIdAndIdNotAndEstadoIn(
+            Long equipoId, Long id, Collection<EstadoPrestamo> estados);
+
+    boolean existsByEquipoIdAndIdNotAndCondicionDevolucionAndIncidenciaAtendida(
+            Long equipoId, Long id, CondicionEquipo condicion, Boolean incidenciaAtendida);
+
+    boolean existsByEquipoIdAndIdNotAndEnMantenimientoTrue(Long equipoId, Long id);
+
     long countByUsuarioIdAndEstadoIn(Long usuarioId, Collection<EstadoPrestamo> estados);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

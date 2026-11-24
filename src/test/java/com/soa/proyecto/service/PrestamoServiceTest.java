@@ -1,5 +1,6 @@
 package com.soa.proyecto.service;
 
+import com.soa.proyecto.model.CondicionEquipo;
 import com.soa.proyecto.model.Equipo;
 import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.model.Prestamo;
@@ -156,6 +157,28 @@ class PrestamoServiceTest {
         assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class,
                 () -> servicio.anular(99L, null)).getStatusCode());
         assertEquals(EstadoPrestamo.APROBADO, prestamo.getEstado());
+    }
+
+    @Test
+    void anularNoLiberaEquipoSiTieneOtraIncidenciaAbiertaOEnMantenimiento() {
+        prestamo.setEstado(EstadoPrestamo.APROBADO);
+        equipo.setDisponible(false);
+        when(prestamos.existsByEquipoIdAndIdNotAndEnMantenimientoTrue(3L, 1L)).thenReturn(true);
+
+        servicio.anular(1L, "No vino");
+
+        assertEquals(EstadoPrestamo.RECHAZADO, prestamo.getEstado());
+        assertFalse(equipo.getDisponible());
+
+        prestamo.setEstado(EstadoPrestamo.APROBADO);
+        when(prestamos.existsByEquipoIdAndIdNotAndEnMantenimientoTrue(3L, 1L)).thenReturn(false);
+        when(prestamos.existsByEquipoIdAndIdNotAndCondicionDevolucionAndIncidenciaAtendida(
+                3L, 1L, CondicionEquipo.DANADO, false)).thenReturn(true);
+
+        servicio.anular(1L, "No vino");
+
+        assertEquals(EstadoPrestamo.RECHAZADO, prestamo.getEstado());
+        assertFalse(equipo.getDisponible());
     }
 
     @Test

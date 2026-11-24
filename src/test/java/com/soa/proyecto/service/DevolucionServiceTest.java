@@ -139,6 +139,7 @@ class DevolucionServiceTest {
     @Test
     void laEntregaUsaElPlazoEnHorasEnviadoPorElAdmin() {
         servicio.entregar(1L, null, 2);
+        assertEquals(2, prestamo.getPlazoHoras());
         assertEquals(prestamo.getFechaEntrega().plusHours(2), prestamo.getFechaLimite());
     }
 
@@ -146,6 +147,7 @@ class DevolucionServiceTest {
     void laEntregaUsaElPlazoFijadoAlAprobarSiNoSeEnvia() {
         prestamo.setPlazoHoras(5);
         servicio.entregar(1L, null, null);
+        assertEquals(5, prestamo.getPlazoHoras());
         assertEquals(prestamo.getFechaEntrega().plusHours(5), prestamo.getFechaLimite());
     }
 
@@ -153,6 +155,7 @@ class DevolucionServiceTest {
     void elPlazoEnviadoEnLaEntregaTienePrioridadSobreElAprobado() {
         prestamo.setPlazoHoras(5);
         servicio.entregar(1L, null, 48);
+        assertEquals(48, prestamo.getPlazoHoras());
         assertEquals(prestamo.getFechaEntrega().plusHours(48), prestamo.getFechaLimite());
     }
 
@@ -323,6 +326,52 @@ class DevolucionServiceTest {
         assertFalse(equipo.getActivo());
         assertFalse(equipo.getDisponible());
         assertEquals(true, prestamo.getIncidenciaAtendida());
+    }
+
+    @Test
+    void devolucionNoLiberaEquipoSiOtroPrestamoLoMantieneBloqueado() {
+        prestamo.setEstado(EstadoPrestamo.ENTREGADO);
+        when(prestamos.existsByEquipoIdAndIdNotAndEnMantenimientoTrue(3L, 1L)).thenReturn(true);
+
+        servicio.devolver(1L, null, "BUEN_ESTADO");
+
+        assertFalse(equipo.getDisponible());
+        assertEquals(EstadoPrestamo.DEVUELTO, prestamo.getEstado());
+    }
+
+    @Test
+    void repararNoLiberaEquipoSiEstaEnUsoOTieneOtroDanoAbierto() {
+        devueltoConIncidencia(CondicionEquipo.DANADO);
+        when(prestamos.existsByEquipoIdAndIdNotAndEstadoIn(eq(3L), eq(1L), any())).thenReturn(true);
+
+        servicio.atenderIncidencia(1L, "REPARADO");
+
+        assertFalse(equipo.getDisponible());
+        assertEquals(true, prestamo.getIncidenciaAtendida());
+
+        devueltoConIncidencia(CondicionEquipo.DANADO);
+        when(prestamos.existsByEquipoIdAndIdNotAndEstadoIn(eq(3L), eq(1L), any())).thenReturn(false);
+        when(prestamos.existsByEquipoIdAndIdNotAndCondicionDevolucionAndIncidenciaAtendida(
+                3L, 1L, CondicionEquipo.DANADO, false)).thenReturn(true);
+
+        servicio.atenderIncidencia(1L, "REPARADO");
+
+        assertFalse(equipo.getDisponible());
+        assertEquals(true, prestamo.getIncidenciaAtendida());
+    }
+
+    @Test
+    void mantenimientoYBajaFallanCon409SiElEquipoEstaEnUsoPorOtroPrestamo() {
+        devueltoConIncidencia(CondicionEquipo.CON_DETALLES);
+        when(prestamos.existsByEquipoIdAndIdNotAndEstadoIn(eq(3L), eq(1L), any())).thenReturn(true);
+
+        verificarError(HttpStatus.CONFLICT, () -> servicio.atenderIncidencia(1L, "MANTENIMIENTO"));
+        verificarError(HttpStatus.CONFLICT, () -> servicio.atenderIncidencia(1L, "BAJA"));
+
+        assertTrue(equipo.getActivo());
+        assertEquals(false, prestamo.getIncidenciaAtendida());
+        verify(prestamos, never()).save(any());
+        verify(equipos, never()).save(any());
     }
 
     private void devueltoConIncidencia(CondicionEquipo condicion) {

@@ -49,7 +49,7 @@
                 boton.className = `btn btn-sm ${usuario.bloqueado ? 'btn-outline-success' : 'btn-outline-danger'}`;
                 boton.textContent = usuario.bloqueado ? 'Desbloquear' : 'Bloquear';
                 boton.setAttribute('aria-label', `${boton.textContent} a ${usuario.nombre}`);
-                boton.addEventListener('click', () => usuario.bloqueado ? desbloquear(usuario) : abrirBloqueo(usuario));
+                boton.addEventListener('click', () => usuario.bloqueado ? desbloquear(usuario, boton) : abrirBloqueo(usuario));
                 acciones.replaceChildren(boton);
             }
             porId('registros').append(fila);
@@ -68,12 +68,19 @@
         porId('vacio').hidden = visibles.length !== 0;
     }
 
+    async function leer(ruta) {
+        const respuesta = await fetchConSesion(ruta);
+        const datos = await respuesta.json().catch(() => null);
+        if (!respuesta.ok) throw new Error(datos?.error || `Error HTTP ${respuesta.status}`);
+        return datos;
+    }
+
     async function cargar(aviso = '', reiniciar = true) {
         if (aviso) mensaje(aviso, 'success'); else porId('mensaje').hidden = true;
         try {
             const [lista, prestamos] = await Promise.all([
-                fetchConSesion('/api/usuarios').then(r => r.json()),
-                fetchConSesion('/api/prestamos').then(r => r.json())
+                leer('/api/usuarios'),
+                leer('/api/prestamos')
             ]);
             usuarios = lista;
             // Préstamos activos y vencidos de cada usuario.
@@ -97,12 +104,18 @@
         porId('modalBloquear').showModal();
     }
 
-    async function desbloquear(usuario) {
+    async function desbloquear(usuario, boton) {
+        if (guardando) return;
+        guardando = true;
+        if (boton) boton.disabled = true;
         try {
             await enviarJson(`/api/usuarios/${usuario.id}/desbloquear`, 'PUT');
             await cargar(`${usuario.nombre} fue desbloqueado y ya puede solicitar equipos.`, false);
         } catch (error) {
             mensaje(error.message, 'danger');
+        } finally {
+            guardando = false;
+            if (boton) boton.disabled = false;
         }
     }
 
@@ -169,6 +182,8 @@
         evento.preventDefault();
         if (guardando || !usuarioABloquear) return;
         guardando = true;
+        porId('confirmarBloquear').disabled = true;
+        porId('cancelarBloquear').disabled = true;
         porId('errorBloquear').hidden = true;
         const usuario = usuarioABloquear;
         try {
@@ -180,6 +195,8 @@
             porId('errorBloquear').hidden = false;
         } finally {
             guardando = false;
+            porId('confirmarBloquear').disabled = false;
+            porId('cancelarBloquear').disabled = false;
         }
     });
 

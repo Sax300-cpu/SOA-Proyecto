@@ -104,6 +104,61 @@ class PrestamoServiceTest {
     }
 
     @Test
+    void unaCuentaBloqueadaNoPuedeSolicitar() {
+        usuario.setBloqueado(true);
+        equipo.setDisponible(true);
+
+        ResponseStatusException error = assertThrows(
+                ResponseStatusException.class, () -> servicio.crearSolicitud("usuario", 3L));
+
+        assertEquals(HttpStatus.FORBIDDEN, error.getStatusCode());
+        verify(prestamos, never()).save(any());
+    }
+
+    @Test
+    void anularUnPrestamoAprobadoLiberaElEquipoYGuardaElMotivo() {
+        prestamo.setEstado(EstadoPrestamo.APROBADO);
+        equipo.setDisponible(false);
+
+        servicio.anular(1L, "  No fue a recogerlo  ");
+
+        assertEquals(EstadoPrestamo.RECHAZADO, prestamo.getEstado());
+        assertEquals("No fue a recogerlo", prestamo.getObservacion());
+        assertTrue(equipo.getDisponible());
+        verify(equipos).save(equipo);
+        verify(prestamos).save(prestamo);
+    }
+
+    @Test
+    void anularSinMotivoUsaUnTextoPredeterminado() {
+        prestamo.setEstado(EstadoPrestamo.APROBADO);
+        servicio.anular(1L, "   ");
+        assertEquals("Anulado por el administrador", prestamo.getObservacion());
+    }
+
+    @Test
+    void anularSoloAplicaALosAprobados() {
+        for (EstadoPrestamo estado : new EstadoPrestamo[]{EstadoPrestamo.SOLICITADO, EstadoPrestamo.ENTREGADO,
+                EstadoPrestamo.DEVUELTO, EstadoPrestamo.RECHAZADO}) {
+            prestamo.setEstado(estado);
+            assertEquals(HttpStatus.CONFLICT, assertThrows(ResponseStatusException.class,
+                    () -> servicio.anular(1L, null)).getStatusCode());
+        }
+        verify(equipos, never()).save(any());
+        verify(prestamos, never()).save(any());
+    }
+
+    @Test
+    void anularValidaElMotivoYLaExistencia() {
+        prestamo.setEstado(EstadoPrestamo.APROBADO);
+        assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ResponseStatusException.class,
+                () -> servicio.anular(1L, "a".repeat(301))).getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class,
+                () -> servicio.anular(99L, null)).getStatusCode());
+        assertEquals(EstadoPrestamo.APROBADO, prestamo.getEstado());
+    }
+
+    @Test
     void aprobarSolicitudFallaSiEquipoNoExisteEstaInactivoONoDisponible() {
         when(equipos.findEquipoById(3L)).thenReturn(Optional.empty());
         assertThrows(EquipoNoDisponibleException.class, () -> servicio.aprobar(1L));
@@ -117,6 +172,37 @@ class PrestamoServiceTest {
         assertThrows(EquipoNoDisponibleException.class, () -> servicio.aprobar(1L));
 
         verify(equipos, times(3)).findEquipoById(3L);
+        verify(prestamos, never()).save(any());
+    }
+
+    @Test
+    void aprobarGuardaElPlazoEnHorasQueFijaElAdmin() {
+        equipo.setDisponible(true);
+
+        servicio.aprobar(1L, 2);
+
+        assertEquals(EstadoPrestamo.APROBADO, prestamo.getEstado());
+        assertEquals(2, prestamo.getPlazoHoras());
+        assertFalse(equipo.getDisponible());
+    }
+
+    @Test
+    void aprobarSinPlazoUsaElPredeterminadoDeTresDias() {
+        equipo.setDisponible(true);
+        servicio.aprobar(1L);
+        assertEquals(72, prestamo.getPlazoHoras());
+    }
+
+    @Test
+    void aprobarConPlazoFueraDeRangoDevuelve400SinCambiarNada() {
+        equipo.setDisponible(true);
+        for (int horas : new int[]{0, -1, 721}) {
+            assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ResponseStatusException.class,
+                    () -> servicio.aprobar(1L, horas)).getStatusCode());
+        }
+        assertEquals(EstadoPrestamo.SOLICITADO, prestamo.getEstado());
+        assertNull(prestamo.getPlazoHoras());
+        assertTrue(equipo.getDisponible());
         verify(prestamos, never()).save(any());
     }
 

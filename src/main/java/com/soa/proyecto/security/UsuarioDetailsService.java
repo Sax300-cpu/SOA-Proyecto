@@ -25,6 +25,7 @@ public class UsuarioDetailsService implements UserDetailsService {
                 .withUsername(usuario.getUsername())
                 .password(usuario.getPassword())
                 .authorities("ROLE_" + usuario.getRol().name())
+                .disabled(Boolean.TRUE.equals(usuario.getBloqueado()))
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 package com.soa.proyecto.repository;
 
+import com.soa.proyecto.model.CondicionEquipo;
 import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.model.Prestamo;
 import jakarta.persistence.LockModeType;
@@ -24,6 +25,16 @@ public interface PrestamoRepository extends JpaRepository<Prestamo, Long> {
 
     boolean existsByUsuarioIdAndEquipoIdAndEstadoIn(
             Long usuarioId, Long equipoId, Collection<EstadoPrestamo> estados);
+
+    // ¿El equipo está en manos de un usuario o reservado para entregar?
+    boolean existsByEquipoIdAndEstadoIn(Long equipoId, Collection<EstadoPrestamo> estados);
+
+    // ¿El equipo tiene una devolución con esa condición cuya incidencia sigue sin resolver?
+    boolean existsByEquipoIdAndCondicionDevolucionAndIncidenciaAtendida(
+            Long equipoId, CondicionEquipo condicion, Boolean incidenciaAtendida);
+
+    // ¿El equipo está actualmente en mantenimiento por una incidencia?
+    boolean existsByEquipoIdAndEnMantenimientoTrue(Long equipoId);
 
     long countByUsuarioIdAndEstadoIn(Long usuarioId, Collection<EstadoPrestamo> estados);
 

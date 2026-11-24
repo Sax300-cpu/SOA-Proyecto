@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Usuarios · Préstamo de equipos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvR9gXkI7JOGa2XVsw53Yke2bsdkBbjmmiX"
+          crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/estilo.css" rel="stylesheet">
+</head>
+<body>
+<header id="encabezado" class="bg-dark text-white py-3" data-rol="ADMIN"></header>
+<main class="container py-4">
+    <h1 class="mb-1">Usuarios</h1>
+    <p class="text-body-secondary mb-4">Bloquea a quien no devuelve a tiempo: no podrá iniciar sesión ni solicitar equipos hasta que lo desbloquees. Sus préstamos actuales se conservan.</p>
+    <div id="mensaje" class="alert" role="status" aria-live="polite" hidden></div>
+
+    <form id="filtros" class="barra-filtros d-flex flex-wrap align-items-end gap-3 mb-3">
+        <div class="flex-grow-1 campo-busqueda">
+            <label for="textoBusqueda" class="form-label small mb-1">Buscar</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input id="textoBusqueda" type="search" class="form-control" placeholder="Nombre o usuario">
+            </div>
+        </div>
+        <div class="form-check form-switch mb-2">
+            <input id="soloBloqueados" type="checkbox" role="switch" class="form-check-input">
+            <label for="soloBloqueados" class="form-check-label">Solo bloqueados</label>
+        </div>
+        <div class="d-flex gap-2">
+            <button id="actualizar" type="submit" class="btn btn-outline-secondary" title="Actualizar" aria-label="Actualizar">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <button id="abrirNuevo" type="button" class="btn btn-primary">
+                <i class="bi bi-person-plus me-1"></i>Nuevo usuario
+            </button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+            <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Usuario</th>
+                <th scope="col">Rol</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Préstamos activos</th>
+                <th scope="col">Vencidos</th>
+                <th scope="col">Acciones</th>
+            </tr>
+            </thead>
+            <tbody id="registros"></tbody>
+        </table>
+    </div>
+    <div id="paginador" class="pie-tabla"></div>
+    <p id="vacio" class="py-4 text-center text-body-secondary" hidden>No hay usuarios para este filtro.</p>
+
+    <dialog id="modalNuevo" class="modal-dialogo" aria-labelledby="tituloNuevo">
+        <form id="formNuevo" novalidate>
+            <h2 id="tituloNuevo" class="h4 mb-3">Nuevo usuario</h2>
+            <div class="mb-3">
+                <label for="nuevoNombre" class="form-label">Nombre completo</label>
+                <input id="nuevoNombre" class="form-control" maxlength="50" autocomplete="off" required>
+            </div>
+            <div class="mb-3">
+                <label for="nuevoUsername" class="form-label">Usuario</label>
+                <input id="nuevoUsername" class="form-control" maxlength="30" autocomplete="off" required>
+                <div class="form-text">Sin espacios, máximo 30 caracteres.</div>
+            </div>
+            <div class="mb-3">
+                <label for="nuevaPassword" class="form-label">Contraseña inicial</label>
+                <div class="input-group">
+                    <input id="nuevaPassword" type="password" class="form-control" minlength="8" autocomplete="new-password" required>
+                    <button id="verPassword" type="button" class="btn btn-outline-secondary" aria-label="Mostrar u ocultar la contraseña">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                <div class="form-text">Mínimo 8 caracteres. Entrégala al usuario por un medio seguro.</div>
+            </div>
+            <div class="mb-3">
+                <label for="nuevoRol" class="form-label">Rol</label>
+                <select id="nuevoRol" class="form-select">
+                    <option value="USUARIO" selected>Usuario</option>
+                    <option value="ADMIN">Administrador</option>
+                </select>
+                <div class="form-text">Un administrador gestiona equipos, préstamos y usuarios.</div>
+            </div>
+            <p id="errorNuevo" class="alert alert-danger py-2" role="alert" hidden></p>
+            <div class="d-flex flex-wrap justify-content-end gap-2">
+                <button id="cancelarNuevo" type="button" class="btn btn-outline-secondary">Cancelar</button>
+                <button id="guardarNuevo" type="submit" class="btn btn-primary">Crear usuario</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="modalBloquear" class="modal-dialogo" aria-labelledby="tituloBloquear">
+        <form id="formBloquear">
+            <h2 id="tituloBloquear" class="h4">Bloquear usuario</h2>
+            <p id="textoBloquear" class="fw-semibold mb-2"></p>
+            <p class="text-body-secondary small">No podrá iniciar sesión ni solicitar equipos hasta que lo desbloquees. Sus préstamos actuales se conservan y los puedes seguir gestionando.</p>
+            <p id="errorBloquear" class="alert alert-danger py-2" role="alert" hidden></p>
+            <div class="d-flex flex-wrap justify-content-end gap-2">
+                <button id="cancelarBloquear" type="button" class="btn btn-outline-secondary" autofocus>Cancelar</button>
+                <button class="btn btn-danger" type="submit">Bloquear</button>
+            </div>
+        </form>
+    </dialog>
+</main>
+<script src="/js/encabezado.js"></script>
+<script src="/js/usuarios.js"></script>
+</body>
+</html>

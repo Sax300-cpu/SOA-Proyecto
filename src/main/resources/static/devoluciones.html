@@ -15,11 +15,12 @@
     <h1 id="titulo" class="mb-1">Entregas, devoluciones e historial</h1>
     <p id="ayuda" class="text-body-secondary mb-4">Consulta el recorrido de tus préstamos.</p>
     <div id="mensaje" class="alert" role="status" aria-live="polite" hidden></div>
+    <div id="alertaIncidencias"></div>
     <p id="notaDevolucion" class="alert alert-light border small mb-3" hidden><i class="bi bi-info-circle me-1"></i>Para devolver un equipo, entrégalo físicamente al administrador para que registre la devolución.</p>
     <section id="contenido" hidden aria-label="Historial de préstamos">
-        <form id="filtros" class="barra-filtros d-flex flex-wrap align-items-center gap-3 mb-3">
-            <div class="d-flex align-items-center gap-2">
-                <label for="estado" class="form-label mb-0 text-nowrap">Estado</label>
+        <form id="filtros" class="barra-filtros d-flex flex-wrap align-items-end gap-3 mb-3">
+            <div>
+                <label for="estado" class="form-label small mb-1">Estado</label>
                 <select id="estado" class="form-select">
                     <option value="">Todos los estados</option>
                     <option value="SOLICITADO">Solicitado</option>
@@ -29,11 +30,32 @@
                     <option value="DEVUELTO">Devuelto</option>
                 </select>
             </div>
-            <button class="btn btn-primary" type="submit">Consultar</button>
+            <div class="flex-grow-1 campo-busqueda">
+                <label for="textoBusqueda" class="form-label small mb-1">Buscar</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input id="textoBusqueda" type="search" class="form-control" placeholder="Equipo, código o usuario">
+                </div>
+            </div>
+            <div>
+                <label for="desde" class="form-label small mb-1">Solicitado desde</label>
+                <input id="desde" type="date" class="form-control">
+            </div>
+            <div>
+                <label for="hasta" class="form-label small mb-1">hasta</label>
+                <input id="hasta" type="date" class="form-control">
+            </div>
+            <div class="form-check form-switch mb-2">
+                <input id="soloVencidos" type="checkbox" role="switch" class="form-check-input">
+                <label for="soloVencidos" class="form-check-label">Solo vencidos</label>
+            </div>
+            <div class="d-flex gap-2">
+                <button id="limpiar" type="button" class="btn btn-outline-secondary">Limpiar</button>
+                <button class="btn btn-outline-secondary" type="submit" title="Actualizar" aria-label="Actualizar"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
         </form>
         <div class="table-responsive" tabindex="0" role="region" aria-label="Tabla desplazable de préstamos">
             <table class="table table-hover align-middle mb-0">
-                <caption class="px-3">Préstamos ordenados del más reciente al más antiguo. Las fechas corresponden al servidor.</caption>
                 <thead class="table-dark">
                 <tr>
                     <th scope="col">Préstamo</th>
@@ -44,23 +66,54 @@
                     <th scope="col">Entrega</th>
                     <th scope="col">Fecha límite</th>
                     <th scope="col">Devolución</th>
-                    <th scope="col">Observación</th>
+                    <th scope="col">Observaciones</th>
                     <th scope="col" id="acciones-col">Acciones</th>
                 </tr>
                 </thead>
                 <tbody id="registros"></tbody>
             </table>
         </div>
+        <div id="paginador" class="pie-tabla"></div>
         <p id="vacio" class="py-4 text-center text-body-secondary" hidden>No hay préstamos para el estado seleccionado.</p>
     </section>
     <dialog id="operacion" class="modal-dialogo" aria-labelledby="operacion-titulo">
         <form id="operacion-form">
             <h2 id="operacion-titulo" class="h4"></h2>
             <p id="operacion-detalle"></p>
+            <div id="plazo-campo" class="mb-3" hidden>
+                <label for="plazoValor" class="form-label">Plazo de devolución</label>
+                <div class="input-group">
+                    <input id="plazoValor" type="number" min="1" max="720" step="1" class="form-control">
+                    <select id="plazoUnidad" class="form-select flex-grow-0 w-auto" aria-label="Unidad del plazo">
+                        <option value="1">horas</option>
+                        <option value="24">días</option>
+                    </select>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-horas="2">2 h</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-horas="3">3 h</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-horas="24">1 día</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-horas="72">3 días</button>
+                </div>
+                <small class="text-body-secondary">Se propone el plazo que se aprobó; puedes cambiarlo solo para este préstamo.</small>
+            </div>
+            <div id="condicion-campo" class="mb-3" hidden>
+                <label for="condicion" class="form-label">Estado del equipo al devolverlo</label>
+                <select id="condicion" class="form-select" aria-describedby="condicion-ayuda">
+                    <option value="BUEN_ESTADO">Buen estado</option>
+                    <option value="CON_DETALLES">Con detalles</option>
+                    <option value="DANADO">Dañado</option>
+                </select>
+                <small id="condicion-ayuda" class="text-body-secondary"></small>
+            </div>
             <div id="observacion-campo" class="mb-3">
-                <label for="observacion" class="form-label">Observación de devolución o daño (opcional)</label>
+                <label id="observacion-etiqueta" for="observacion" class="form-label">Observación</label>
                 <textarea id="observacion" class="form-control" maxlength="300" rows="3" aria-describedby="observacion-ayuda"></textarea>
-                <small id="observacion-ayuda">Máximo 300 caracteres. No se registran cobros.</small>
+                <small id="observacion-ayuda" class="text-body-secondary">Máximo 300 caracteres. No se registran cobros.</small>
+            </div>
+            <div id="resolucion-campo" class="mb-3" hidden>
+                <label for="resolucion" class="form-label">¿Cómo se resuelve?</label>
+                <select id="resolucion" class="form-select"></select>
             </div>
             <p id="operacion-error" class="text-danger" role="alert"></p>
             <div class="d-flex gap-3 justify-content-end">

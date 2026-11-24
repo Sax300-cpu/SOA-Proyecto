@@ -23,6 +23,9 @@
     <div id="aviso" class="alert alert-danger" role="alert" hidden></div>
 
     <div id="contenido" hidden>
+        <!-- Aviso al usuario: equipos devueltos con detalles o daños sin resolver -->
+        <div id="alertaIncidencias"></div>
+
         <!-- Números de resumen (se llenan según el rol) -->
         <div id="resumen" class="row g-3 mb-4"></div>
 
@@ -80,6 +83,7 @@
 const porId = id => document.getElementById(id);
 const fechaCorta = valor => valor ? new Date(valor).toLocaleString('es-EC', { dateStyle: 'short', timeStyle: 'short' }) : '—';
 let nombreEquipo = id => `#${id}`;
+let nombreUsuario = id => `#${id}`;
 let ocupado = false;
 
 // Lee JSON de la API; lanza error si la respuesta no es 2xx.
@@ -90,9 +94,9 @@ async function leer(ruta) {
 }
 
 // Dibuja una tarjeta de resumen: ícono, número grande y etiqueta (con enlace opcional).
-function tarjetaResumen({ icono, clase, valor, etiqueta, enlace }) {
+function tarjetaResumen({ icono, clase, valor, etiqueta, enlace, ancho = 'col-6 col-lg-3' }) {
     const columna = document.createElement('div');
-    columna.className = 'col-6 col-lg-3';
+    columna.className = ancho;
     const tarjeta = document.createElement(enlace ? 'a' : 'div');
     tarjeta.className = 'card tarjeta-menu tarjeta-resumen h-100 shadow-sm text-decoration-none text-body';
     if (enlace) tarjeta.href = enlace;
@@ -128,15 +132,24 @@ function celdaTexto(fila, texto) {
 }
 
 // Aprueba o rechaza una solicitud desde el panel (PUT con token CSRF) y vuelve a cargar los datos.
-async function resolverSolicitud(id, accion) {
+async function resolverSolicitud(prestamo, accion) {
     if (ocupado) return;
+    const id = prestamo.id;
+    // Al aprobar, el administrador fija el plazo de devolución (empieza a contar al entregar).
+    let plazoHoras = null;
+    if (accion === 'aprobar') {
+        plazoHoras = await pedirPlazoAprobacion(
+            `Préstamo #${id} · ${nombreEquipo(prestamo.equipoId)} para ${nombreUsuario(prestamo.usuarioId)}.`);
+        if (plazoHoras === null) return;
+    }
     ocupado = true;
     document.querySelectorAll('#listaPendientes button').forEach(b => { b.disabled = true; });
     try {
         const csrf = await (await fetchConSesion('/api/auth/csrf')).json();
         const respuesta = await fetchConSesion(`/api/prestamos/${id}/${accion}`, {
             method: 'PUT',
-            headers: { [csrf.headerName]: csrf.token }
+            headers: { [csrf.headerName]: csrf.token, ...(plazoHoras === null ? {} : { 'Content-Type': 'application/json' }) },
+            ...(plazoHoras === null ? {} : { body: JSON.stringify({ plazoHoras }) })
         });
         if (!respuesta.ok) {
             const datos = await respuesta.json().catch(() => null);
@@ -153,13 +166,17 @@ async function resolverSolicitud(id, accion) {
 }
 
 async function cargarAdmin() {
-    const [equipos, pendientes, entregados, aprobados] = await Promise.all([
+    const [equipos, pendientes, entregados, aprobados, devueltos] = await Promise.all([
         leer('/api/equipos?disponibles=false'),
         leer('/api/prestamos/pendientes'),
         leer('/api/prestamos?estado=ENTREGADO'),
-        leer('/api/prestamos?estado=APROBADO')
+        leer('/api/prestamos?estado=APROBADO'),
+        leer('/api/prestamos?estado=DEVUELTO')
     ]);
     nombreEquipo = await cargarNombresEquipos();
+    nombreUsuario = await cargarNombresUsuarios();
+    const incidencias = devueltos.filter(tieneIncidenciaAbierta);
+    const enMantenimiento = incidencias.filter(p => p.enMantenimiento === true).length;
 
     const disponibles = equipos.filter(e => e.disponible).length;
     const vencidos = entregados.filter(estaVencido).length;
@@ -179,14 +196,17 @@ async function cargarAdmin() {
 
     porId('resumen').replaceChildren(
         tarjetaResumen({ icono: 'bi-pc-display', clase: 'icono-catalogo', valor: `${disponibles} / ${equipos.length}`,
-            etiqueta: 'Equipos disponibles', enlace: '/equipos.html' }),
+            etiqueta: 'Equipos disponibles', enlace: '/equipos.html', ancho: 'col-6 col-lg' }),
         tarjetaResumen({ icono: 'bi-hourglass-split', clase: 'icono-pendientes', valor: pendientes.length,
-            etiqueta: 'Solicitudes pendientes', enlace: '/admin-aprobaciones.html' }),
+            etiqueta: 'Solicitudes pendientes', enlace: '/admin-aprobaciones.html', ancho: 'col-6 col-lg' }),
         tarjetaResumen({ icono: 'bi-box-arrow-up-right', clase: 'icono-solicitudes', valor: aprobados.length,
-            etiqueta: 'Aprobados por entregar', enlace: '/devoluciones.html' }),
+            etiqueta: 'Aprobados por entregar', enlace: '/devoluciones.html', ancho: 'col-6 col-lg' }),
         tarjetaResumen({ icono: 'bi-arrow-return-left', clase: 'icono-historial', valor: entregados.length,
             etiqueta: vencidos > 0 ? `Entregados (${vencidos} vencido${vencidos === 1 ? '' : 's'})` : 'Entregados sin devolver',
-            enlace: '/devoluciones.html' })
+            enlace: '/devoluciones.html', ancho: 'col-6 col-lg' }),
+        tarjetaResumen({ icono: 'bi-tools', clase: 'icono-incidencias', valor: incidencias.length,
+            etiqueta: enMantenimiento > 0 ? `Incidencias abiertas (${enMantenimiento} en mantenimiento)` : 'Incidencias abiertas',
+            enlace: '/incidencias.html', ancho: 'col-6 col-lg' })
     );
 
     const tabla = porId('listaPendientes');
@@ -198,19 +218,19 @@ async function cargarAdmin() {
     for (const prestamo of pendientes.slice(0, 5)) {
         const fila = document.createElement('tr');
         celdaTexto(fila, nombreEquipo(prestamo.equipoId));
-        celdaTexto(fila, `Usuario #${prestamo.usuarioId}`);
+        celdaTexto(fila, nombreUsuario(prestamo.usuarioId));
         celdaTexto(fila, fechaCorta(prestamo.fechaSolicitud));
         const acciones = celdaTexto(fila, '');
         const aprobar = document.createElement('button');
         aprobar.type = 'button';
         aprobar.className = 'btn btn-sm btn-success me-2';
         aprobar.textContent = 'Aprobar';
-        aprobar.addEventListener('click', () => resolverSolicitud(prestamo.id, 'aprobar'));
+        aprobar.addEventListener('click', () => resolverSolicitud(prestamo, 'aprobar'));
         const rechazar = document.createElement('button');
         rechazar.type = 'button';
         rechazar.className = 'btn btn-sm btn-outline-danger';
         rechazar.textContent = 'Rechazar';
-        rechazar.addEventListener('click', () => resolverSolicitud(prestamo.id, 'rechazar'));
+        rechazar.addEventListener('click', () => resolverSolicitud(prestamo, 'rechazar'));
         acciones.append(aprobar, rechazar);
         tabla.append(fila);
     }
@@ -225,6 +245,9 @@ async function cargarUsuario() {
         leer('/api/prestamos/mios')
     ]);
     nombreEquipo = await cargarNombresEquipos();
+
+    const aviso = avisoIncidencias(mios, nombreEquipo);
+    porId('alertaIncidencias').replaceChildren(...(aviso ? [aviso] : []));
 
     const contar = estado => mios.filter(p => p.estado === estado).length;
     const vencidos = mios.filter(estaVencido).length;

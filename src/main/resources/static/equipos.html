@@ -33,6 +33,10 @@
                 <input id="disponibles" type="checkbox" role="switch" class="form-check-input">
                 <label for="disponibles" class="form-check-label">Solo disponibles</label>
             </div>
+            <div id="grupoDesactivados" class="form-check form-switch mb-0" hidden>
+                <input id="verDesactivados" type="checkbox" role="switch" class="form-check-input">
+                <label for="verDesactivados" class="form-check-label">Ver desactivados</label>
+            </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Buscar</button>
                 <button id="actualizar" type="button" class="btn btn-outline-secondary" title="Actualizar listado" aria-label="Actualizar listado" disabled>
@@ -41,7 +45,7 @@
             </div>
         </form>
 
-        <h2 id="tituloListado" class="h6 text-body-secondary mb-2">Equipos activos · <span id="contador"></span></h2>
+        <h2 id="tituloListado" class="h6 text-body-secondary mb-2"><span id="tipoLista">Equipos activos</span> · <span id="contador"></span></h2>
 
         <div class="table-responsive bg-white">
             <table class="table table-hover align-middle mb-0">
@@ -62,6 +66,7 @@
                 </tbody>
             </table>
         </div>
+        <div id="paginador" class="pie-tabla"></div>
     </section>
 
     <dialog id="modalEquipo" class="modal-dialogo" aria-labelledby="tituloFormulario">
@@ -69,17 +74,35 @@
             <h2 id="tituloFormulario" class="h4 mb-3">Registrar equipo</h2>
             <div class="mb-3">
                 <label for="nombre" class="form-label">Nombre</label>
-                <input id="nombre" class="form-control" maxlength="50" placeholder="Ej. Laptop HP ProBook" required>
+                <input id="nombre" class="form-control" maxlength="50" placeholder="Ej. Cable HDMI 2 m" required>
+            </div>
+            <div id="grupoPrefijo" class="mb-3">
+                <label for="prefijo" class="form-label">Prefijo del código</label>
+                <input id="prefijo" class="form-control text-uppercase" maxlength="3" placeholder="Ej. CAB" autocomplete="off">
+                <div class="form-text">3 letras. Se sugiere desde el nombre y puedes cambiarlo. El número se asigna solo (CAB-001, CAB-002…).</div>
             </div>
             <div class="mb-3">
                 <label for="descripcion" class="form-label">Descripción breve (opcional)</label>
                 <textarea id="descripcion" class="form-control" maxlength="200" rows="2"></textarea>
             </div>
             <p id="errorEquipo" class="alert alert-danger py-2" role="alert" hidden></p>
-            <p class="text-body-secondary small">El código de inventario (ej. EQUIPO-001) se genera automáticamente. Los préstamos controlan su disponibilidad.</p>
+            <p class="text-body-secondary small">El código de inventario no se puede cambiar después. Los préstamos controlan la disponibilidad.</p>
             <div class="d-flex flex-wrap justify-content-end gap-2">
                 <button id="cancelar" type="button" class="btn btn-outline-secondary">Cancelar</button>
                 <button id="guardar" type="submit" class="btn btn-primary">Registrar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="modalDesactivar" class="modal-dialogo" aria-labelledby="tituloDesactivar">
+        <form id="formDesactivar">
+            <h2 id="tituloDesactivar" class="h4">Desactivar equipo</h2>
+            <p id="textoDesactivar" class="fw-semibold mb-2"></p>
+            <p class="text-body-secondary small">Dejará de aparecer en el catálogo, pero se conserva su historial. Podrás activarlo de nuevo con «Ver desactivados».</p>
+            <p id="errorDesactivar" class="alert alert-danger py-2" role="alert" hidden></p>
+            <div class="d-flex flex-wrap justify-content-end gap-2">
+                <button id="cancelarDesactivar" type="button" class="btn btn-outline-secondary" autofocus>Cancelar</button>
+                <button class="btn btn-danger" type="submit">Desactivar</button>
             </div>
         </form>
     </dialog>

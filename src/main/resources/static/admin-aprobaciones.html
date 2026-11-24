@@ -31,11 +31,15 @@
             <tbody id="tablaPendientes"></tbody>
         </table>
     </div>
+    <div id="paginador" class="pie-tabla"></div>
 </main>
 
 <script src="/js/encabezado.js"></script>
 <script>
     const tablaPendientes = document.getElementById("tablaPendientes");
+    const fechaCorta = valor => valor ? new Date(valor).toLocaleString("es-EC", { dateStyle: "short", timeStyle: "short" }) : "—";
+    let nombreEquipo = id => `#${id}`;
+    let nombreUsuario = id => `#${id}`;
 
     function mostrarMensaje(texto, tipo = "danger") {
         const aviso = document.getElementById("mensaje");
@@ -56,7 +60,15 @@
     }
 
     // Envía PUT /api/prestamos/{id}/aprobar o /rechazar con token CSRF y recarga la tabla.
-    async function cambiarEstado(id, accion) {
+    async function cambiarEstado(prestamo, accion) {
+        const id = prestamo.id;
+        // Al aprobar, el administrador fija el plazo de devolución (empieza a contar al entregar).
+        let plazoHoras = null;
+        if (accion === "aprobar") {
+            plazoHoras = await pedirPlazoAprobacion(
+                `Préstamo #${id} · ${nombreEquipo(prestamo.equipoId)} para ${nombreUsuario(prestamo.usuarioId)}.`);
+            if (plazoHoras === null) return;
+        }
         try {
             const csrfRespuesta = await fetchConSesion("/api/auth/csrf");
             if (!csrfRespuesta.ok) {
@@ -66,23 +78,24 @@
 
             const respuesta = await fetchConSesion(`/api/prestamos/${id}/${accion}`, {
                 method: "PUT",
-                headers: { [csrf.headerName]: csrf.token }
+                headers: { [csrf.headerName]: csrf.token, ...(plazoHoras === null ? {} : { "Content-Type": "application/json" }) },
+                ...(plazoHoras === null ? {} : { body: JSON.stringify({ plazoHoras }) })
             });
             if (!respuesta.ok) {
                 throw new Error(await mensajeError(respuesta));
             }
 
             mostrarMensaje(
-                `Solicitud #${id} ${accion === "aprobar" ? "aprobada" : "rechazada"} correctamente.`,
+                `Solicitud #${id} ${accion === "aprobar" ? `aprobada con plazo de ${formatearPlazo(plazoHoras)}` : "rechazada"} correctamente.`,
                 "success"
             );
-            await cargarPendientes();
+            await cargarPendientes(false);
         } catch (error) {
             mostrarMensaje(`No se pudo ${accion === "aprobar" ? "aprobar" : "rechazar"} la solicitud: ${error.message}`);
         }
     }
 
-    async function cargarPendientes() {
+    async function cargarPendientes(reiniciar = true) {
         try {
             const respuesta = await fetchConSesion("/api/prestamos/pendientes");
             if (!respuesta.ok) {
@@ -90,48 +103,56 @@
             }
 
             const prestamos = await respuesta.json();
-            const nombreEquipo = await cargarNombresEquipos();
-            tablaPendientes.replaceChildren();
+            nombreEquipo = await cargarNombresEquipos();
+            nombreUsuario = await cargarNombresUsuarios();
+            paginador.mostrar(prestamos, reiniciar);
+        } catch (error) {
+            mostrarMensaje(`No se pudieron cargar las solicitudes pendientes: ${error.message}`);
+        }
+    }
 
-            if (prestamos.length === 0) {
-                const fila = document.createElement("tr");
-                const celda = document.createElement("td");
-                celda.colSpan = 5;
-                celda.className = "text-center text-body-secondary";
-                celda.textContent = "No hay solicitudes pendientes.";
-                fila.appendChild(celda);
-                tablaPendientes.appendChild(fila);
-                return;
-            }
+    // Dibuja solo las filas de la página actual (10 por página).
+    function dibujarPendientes(pagina) {
+        tablaPendientes.replaceChildren();
 
-            prestamos.forEach((prestamo) => {
+        if (pagina.length === 0) {
+            const fila = document.createElement("tr");
+            const celda = document.createElement("td");
+            celda.colSpan = 5;
+            celda.className = "text-center text-body-secondary";
+            celda.textContent = "No hay solicitudes pendientes.";
+            fila.appendChild(celda);
+            tablaPendientes.appendChild(fila);
+            return;
+        }
+
+        pagina.forEach((prestamo) => {
                 const fila = document.createElement("tr");
                 agregarCelda(fila, prestamo.id);
-                agregarCelda(fila, prestamo.usuarioId);
+                agregarCelda(fila, nombreUsuario(prestamo.usuarioId));
                 agregarCelda(fila, nombreEquipo(prestamo.equipoId));
-                agregarCelda(fila, prestamo.fechaSolicitud);
+                agregarCelda(fila, fechaCorta(prestamo.fechaSolicitud));
 
                 const acciones = document.createElement("td");
                 const aprobar = document.createElement("button");
                 aprobar.type = "button";
                 aprobar.className = "btn btn-success btn-sm me-2";
                 aprobar.textContent = "Aprobar";
-                aprobar.onclick = () => cambiarEstado(prestamo.id, "aprobar");
+                aprobar.onclick = () => cambiarEstado(prestamo, "aprobar");
 
                 const rechazar = document.createElement("button");
                 rechazar.type = "button";
                 rechazar.className = "btn btn-danger btn-sm";
                 rechazar.textContent = "Rechazar";
-                rechazar.onclick = () => cambiarEstado(prestamo.id, "rechazar");
+                rechazar.onclick = () => cambiarEstado(prestamo, "rechazar");
 
                 acciones.append(aprobar, rechazar);
                 fila.appendChild(acciones);
                 tablaPendientes.appendChild(fila);
-            });
-        } catch (error) {
-            mostrarMensaje(`No se pudieron cargar las solicitudes pendientes: ${error.message}`);
-        }
+        });
     }
+
+    const paginador = crearPaginador(document.getElementById("paginador"), dibujarPendientes);
 
     sesionActual.then(usuario => {
         if (usuario) cargarPendientes();

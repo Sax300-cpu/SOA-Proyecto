@@ -1,5 +1,7 @@
 package com.soa.proyecto.controller;
 
+import com.soa.proyecto.dto.AnulacionPeticion;
+import com.soa.proyecto.dto.AprobacionPeticion;
 import com.soa.proyecto.dto.SolicitudPrestamoRequest;
 import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.model.Prestamo;
@@ -48,13 +50,20 @@ public class SolicitudController {
         return prestamoService.buscarPorEstado(EstadoPrestamo.SOLICITADO);
     }
 
+    // Cuerpo opcional {"plazoHoras": 2}: plazo de devolución que fija el administrador.
     @PutMapping("/{id}/aprobar")
-    public Prestamo aprobar(@PathVariable Long id) {
-        return prestamoService.aprobar(id);
+    public Prestamo aprobar(@PathVariable Long id, @RequestBody(required = false) AprobacionPeticion peticion) {
+        return prestamoService.aprobar(id, peticion == null ? null : peticion.plazoHoras());
     }
 
     @PutMapping("/{id}/rechazar")
     public Prestamo rechazar(@PathVariable Long id) {
         return prestamoService.rechazar(id);
+    }
+
+    // Anula un préstamo aprobado que aún no se entregó (motivo opcional).
+    @PutMapping("/{id}/anular")
+    public Prestamo anular(@PathVariable Long id, @RequestBody(required = false) AnulacionPeticion peticion) {
+        return prestamoService.anular(id, peticion == null ? null : peticion.motivo());
     }
 }

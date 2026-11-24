@@ -92,7 +92,7 @@ Antes de programar en paralelo, el grupo debe dejar claros estos puntos:
 |---|---|---|
 | Estilo compartido, escudo FISEI y paleta | Hecho | Todos |
 | Panel de inicio por rol (resumen + aprobar/rechazar) | Hecho | Luis, Kevin |
-| Catálogo con modal y código de equipo (`LAP-001`) | Hecho | Manolo |
+| Catálogo con modal y código de equipo por prefijo (`CAB-010`) | Hecho | Manolo |
 | Historial más limpio y badges de estado | Hecho | Emilio |
 | Corregir solicitudes duplicadas del mismo usuario | Hecho (`feature/mejoras-prestamos`) | Luis |
 | Límite de solicitudes activas por usuario (3) | Hecho (`feature/mejoras-prestamos`) | Luis |

@@ -112,7 +112,7 @@ h1, h2, h3, .h1, .h2, .h3, .h4 {
     border: 1px solid #dde3ec;
     margin-bottom: 1rem;
 }
-.icono-catalogo, .icono-pendientes, .icono-solicitudes, .icono-historial {
+.icono-catalogo, .icono-pendientes, .icono-solicitudes, .icono-historial, .icono-incidencias {
     background: #eef1f6;
 }
 
@@ -209,3 +209,24 @@ h1, h2, h3, .h1, .h2, .h3, .h4 {
     padding: .85rem 1rem;
 }
 .barra-filtros .campo-busqueda { flex: 1 1 16rem; width: auto; min-width: 14rem; }
+
+/* Paginación de las tablas (10 filas por página) */
+.pie-tabla {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-top: .75rem;
+}
+.pie-tabla:empty { display: none; }
+.pagination {
+    --bs-pagination-color: var(--tinta);
+    --bs-pagination-hover-color: var(--tinta);
+    --bs-pagination-hover-bg: #eef1f6;
+    --bs-pagination-focus-color: var(--tinta);
+    --bs-pagination-focus-box-shadow: 0 0 0 .2rem rgba(29, 58, 95, .15);
+    --bs-pagination-active-bg: var(--tinta);
+    --bs-pagination-active-border-color: var(--tinta);
+    --bs-pagination-border-color: var(--borde);
+}

@@ -1,6 +1,8 @@
 package com.soa.proyecto.controller;
 
 import com.soa.proyecto.dto.DevolucionPeticion;
+import com.soa.proyecto.dto.EntregaPeticion;
+import com.soa.proyecto.dto.IncidenciaPeticion;
 import com.soa.proyecto.model.EstadoPrestamo;
 import com.soa.proyecto.model.Prestamo;
 import com.soa.proyecto.service.DevolucionService;
@@ -21,9 +23,13 @@ public class DevolucionController {
     private final DevolucionService servicio;
 
     @PutMapping("/api/prestamos/{id}/entregar")
-    public Prestamo entregar(@PathVariable Long id, Authentication sesion) {
+    public Prestamo entregar(@PathVariable Long id,
+                             @RequestBody(required = false) EntregaPeticion peticion,
+                             Authentication sesion) {
         exigirRol(sesion, "ADMIN");
-        return servicio.entregar(id);
+        return servicio.entregar(id,
+                peticion == null ? null : peticion.observacion(),
+                peticion == null ? null : peticion.plazoHoras());
     }
 
     @PutMapping("/api/prestamos/{id}/devolver")
@@ -31,7 +37,18 @@ public class DevolucionController {
                              @RequestBody(required = false) DevolucionPeticion peticion,
                              Authentication sesion) {
         exigirRol(sesion, "ADMIN");
-        return servicio.devolver(id, peticion == null ? null : peticion.observacion());
+        return servicio.devolver(id,
+                peticion == null ? null : peticion.observacion(),
+                peticion == null ? null : peticion.condicion());
+    }
+
+    // Cierra la incidencia de un equipo devuelto con detalles o dañado.
+    @PutMapping("/api/prestamos/{id}/incidencia")
+    public Prestamo atenderIncidencia(@PathVariable Long id,
+                                      @RequestBody(required = false) IncidenciaPeticion peticion,
+                                      Authentication sesion) {
+        exigirRol(sesion, "ADMIN");
+        return servicio.atenderIncidencia(id, peticion == null ? null : peticion.accion());
     }
 
     @GetMapping("/api/prestamos")

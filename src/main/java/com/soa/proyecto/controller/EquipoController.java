@@ -21,6 +21,12 @@ public class EquipoController {
         return servicio.listar(disponibles);
     }
 
+    // Solo ADMIN (regla en SecurityConfig).
+    @GetMapping("/desactivados")
+    public List<Equipo> desactivados() {
+        return servicio.listarDesactivados();
+    }
+
     @GetMapping("/{id}")
     public Equipo detalle(@PathVariable Long id) {
         return servicio.detalle(id);
@@ -40,5 +46,10 @@ public class EquipoController {
     @PutMapping("/{id}/desactivar")
     public Equipo desactivar(@PathVariable Long id) {
         return servicio.desactivar(id);
+    }
+
+    @PutMapping("/{id}/activar")
+    public Equipo activar(@PathVariable Long id) {
+        return servicio.activar(id);
     }
 }

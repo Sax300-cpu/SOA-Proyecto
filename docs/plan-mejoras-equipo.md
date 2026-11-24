@@ -6,15 +6,12 @@ Resumen de lo que se hizo el 23 de noviembre sobre `develop` (f8b0208), qué hay
 
 ```powershell
 git fetch origin
-git checkout feature/mejoras-interfaz
+git checkout feature/codigo-por-prefijo
 ```
 
 1. Iniciar MySQL desde XAMPP.
-2. Si ya tenías equipos creados, darles código (la columna nueva `equCodigo` queda vacía). En phpMyAdmin, base `soa_prestamos`:
-   ```sql
-   UPDATE equipos SET equCodigo = CONCAT('EQ-', LPAD(equId, 3, '0')) WHERE equCodigo IS NULL;
-   ```
-3. `.\mvnw.cmd test` (deben pasar 35 pruebas) y luego `.\mvnw.cmd spring-boot:run`.
+2. Los equipos que ya existan reciben un código de respaldo (`EQUIPO-001`…) al arrancar la aplicación; no hace falta ningún SQL.
+3. `.\mvnw.cmd test` (deben pasar 93 pruebas) y luego `.\mvnw.cmd spring-boot:run`.
 4. Abrir `http://localhost:8080` con las cuentas de demostración: `admin / admin123` (ADMIN) y `usuario / usuario123` (USUARIO).
 
 ## 2. Qué cambió y a quién le toca revisarlo
@@ -25,15 +22,15 @@ git checkout feature/mejoras-interfaz
 | Login y registro | Fondo blanco con el escudo de la FISEI (`static/img`). Barra superior con el escudo. | Kevin |
 | Inicio (`index.html`) | Ya no repite el menú: es un **panel de resumen**. Admin: equipos disponibles, pendientes, aprobados por entregar, entregados sin devolver, y las 5 solicitudes más recientes con **Aprobar/Rechazar**. Usuario: equipos disponibles, esperando aprobación, listos para retirar, en su poder, y sus últimos préstamos. | Luis, Kevin |
 | Catálogo | El formulario de registro/edición pasó a un **modal** (`<dialog>`). Barra de búsqueda y filtros ordenada y contador de equipos. | Manolo |
-| Código de equipo | Campo `codigo` en `Equipo` autogenerado en el servidor (`EQUIPO-001`, `EQUIPO-002`, ...). Se asigna también automáticamente al arrancar a equipos antiguos sin código. Se muestra en catálogo, historial, pendientes y mis solicitudes en lugar de `#id`. | Manolo, Luis, Emilio |
+| Código de equipo | Campo `codigo` en `Equipo`, armado en el servidor como `PREFIJO-NÚMERO` (ej. `CAB-010`): el prefijo son 3 letras sugeridas desde el nombre (editables en el modal) y el número es correlativo por prefijo. Los equipos antiguos reciben `EQUIPO-nnn` al arrancar. Se muestra en catálogo, historial, pendientes y mis solicitudes en lugar de `#id`. | Manolo, Luis, Emilio |
 | Historial | Aviso verde eliminado, tabla con el mismo estilo, filtro que se aplica al cambiar, fechas más cortas. | Emilio |
 | Estados | Badges de color (`etiquetaEstado` en `js/encabezado.js`). | Todos |
 
 ### Cambio de contrato de la API
-`POST /api/equipos` y `PUT /api/equipos/{id}` mantienen el contrato original de entrada (`nombre` y `descripcion`), y la respuesta incluye el `codigo` autogenerado (`EQUIPO-001`, `EQUIPO-002`, ...):
+`POST /api/equipos` recibe `nombre`, `descripcion` y, opcionalmente, `prefijo` (3 letras). `PUT /api/equipos/{id}` ignora el `prefijo`. La respuesta incluye el `codigo` generado:
 
 ```json
-{"nombre":"Laptop HP","descripcion":"Para clases"}
+{"nombre":"Cable HDMI","descripcion":"2 metros","prefijo":"CAB"}
 ```
 
 Detalles en [catalogo-equipos.md](catalogo-equipos.md) y [contratos-api.md](contratos-api.md).
@@ -44,8 +41,8 @@ Siguiendo la regla del equipo, se avisa: `Equipo`, `EquipoRepository`, `EquipoSe
 ## 3. Lista de pruebas para los compañeros
 
 - [ ] Login como ADMIN y como USUARIO; el inicio muestra su panel.
-- [ ] Admin: registrar un equipo con código `LAP-010`; repetirlo (error 409 dentro del modal); probar `ABC` o `KSDKAKDKASKAKD` (error de formato).
-- [ ] Admin: editar un equipo desde el modal y comprobar que el código aparece en el catálogo.
+- [ ] Admin: registrar «Cable HDMI» y comprobar que el prefijo se sugiere solo (`CAB`) y que el código es `CAB-001`; registrar otro cable (`CAB-002`) y un proyector (`PRO-001`).
+- [ ] Admin: editar un equipo desde el modal; el código se mantiene aunque cambie el nombre y el prefijo ya no se puede tocar.
 - [ ] Usuario: solicitar un equipo desde el catálogo.
 - [ ] Admin: aprobar y rechazar **desde el panel de inicio**; los números se actualizan.
 - [ ] Admin: Historial → Registrar entrega y Registrar devolución.
@@ -69,6 +66,15 @@ Al **entregar** en `DevolucionService.entregar`, se guarda `fechaLimite = hoy + 
 
 ### 4.4 Cómo devuelve un usuario — Implementado
 Se muestra un aviso informativo en `/index.html` (panel de usuario), `/mis-solicitudes.html` y `/devoluciones.html` explicando que la devolución la registra el administrador al recibir el equipo físico.
+
+### Administración (implementado en `feature/codigo-por-prefijo`)
+- **Plazo de devolución en horas que fija el administrador al aprobar** (en Pendientes o en el Inicio), con un diálogo y atajos de 2 h, 3 h, 1 día y 3 días; empieza a contar al entregar y se puede ajustar en la entrega (§4.3 ya no es fijo de 3 días).
+- **Nuevo usuario:** el administrador crea cuentas (USUARIO o ADMIN) desde la página Usuarios.
+- **Incidencias:** página propia (`/incidencias.html`) con resolución: atendida, mantenimiento, reparado o baja; tarjeta en el Inicio e insignias «En mantenimiento»/«Dañado» en el catálogo.
+- **Usuarios** (`/usuarios.html`): lista con préstamos activos y vencidos; bloquear y desbloquear cuentas. Los nombres de usuario aparecen en las tablas del administrador en lugar de `#id`.
+- **Anular un préstamo aprobado** que no se retiró (queda RECHAZADO y libera el equipo).
+- **Filtros en el historial:** texto (equipo, código o usuario), fechas y solo vencidos.
+- **Equipos desactivados:** se ven con «Ver desactivados» y se pueden activar de nuevo.
 
 ### Orden sugerido
 1. Probar esta rama y corregir lo que encuentren.

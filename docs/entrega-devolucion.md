@@ -45,7 +45,7 @@ Content-Type: application/json
 {"observacion":"Pantalla rayada"}
 ```
 
-También se acepta devolver sin cuerpo, con `{}` o con observación nula/en blanco.
+También se acepta devolver sin cuerpo, con `{}` o con observación nula/en blanco (se asume `BUEN_ESTADO`). Con `"condicion":"CON_DETALLES"` o `"DANADO"` la observación es obligatoria y se abre una incidencia; un equipo `DANADO` no vuelve al catálogo hasta resolverla con `PUT /api/prestamos/{id}/incidencia` (`REPARADO` o `BAJA`; para `CON_DETALLES`, `ATENDIDA`). La entrega acepta una observación opcional del estado del equipo. Ver [contratos-api.md](contratos-api.md).
 `GET /api/prestamos` consulta el historial ADMIN; `GET /api/historial/mio` consulta
 el propio. Ambos aceptan `?estado=DEVUELTO` y los otros estados del enum existente.
 

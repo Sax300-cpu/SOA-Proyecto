@@ -17,22 +17,30 @@ El ADMIN puede registrar, editar y desactivar. El USUARIO ve por defecto solo di
 | GET | `/api/equipos/{id}` | Detalle activo o 404 | ADMIN, USUARIO |
 | POST | `/api/equipos` | Alta, 201 | ADMIN |
 | PUT | `/api/equipos/{id}` | Edición de datos, 200 | ADMIN |
+| GET | `/api/equipos/desactivados` | Lista de equipos desactivados | ADMIN |
 | PUT | `/api/equipos/{id}/desactivar` | Desactivación, 200 | ADMIN |
+| PUT | `/api/equipos/{id}/activar` | Reactivación, 200 | ADMIN |
 
-Cuerpo de alta/edición:
+Cuerpo de alta (el `prefijo` es opcional) y de edición (el `prefijo` se ignora):
 
 ```json
-{"nombre":"Proyector","descripcion":"Para aulas"}
+{"nombre":"Cable HDMI","descripcion":"2 metros","prefijo":"CAB"}
 ```
 
-- Código autogenerado y único en el servidor con formato `EQUIPO-001`, `EQUIPO-002`, ... a partir del ID del equipo. No se recibe ni se edita desde el cliente; los equipos antiguos sin código reciben uno automáticamente al arrancar o al editarse.
+- **Plazo de devolución:** no se define en el catálogo. Lo fija el administrador al **aprobar** cada préstamo (ver [contratos-api.md](contratos-api.md)).
+- **Código de inventario:** lo arma el servidor como `PREFIJO-NÚMERO` (ej. `CAB-010`).
+  - El prefijo son 3 letras (A-Z). Si el cliente no lo envía, se toman las 3 primeras letras del nombre sin tildes ni símbolos (`Cámara web` → `CAM`); si el nombre tiene menos de 3 letras, se usa `EQP`. Un prefijo enviado que no tenga exactamente 3 letras responde 400.
+  - El número es correlativo **por prefijo**: si ya existe `CAB-009`, el siguiente cable es `CAB-010`. Los equipos desactivados también cuentan para no repetir códigos. Cada prefijo empieza en `001`.
+  - El código no cambia al editar el equipo, ni siquiera si cambia el nombre.
+  - Si dos altas simultáneas calculan el mismo código, la segunda responde 409 y se puede reintentar.
+  - Los equipos antiguos sin código reciben uno de respaldo (`EQUIPO-001`, a partir de su ID) al arrancar la aplicación o al editarlos.
 - Nombre obligatorio, no solo espacios, máximo 50 caracteres después de quitar espacios externos.
 - Descripción opcional, máximo 200 caracteres después de quitar espacios externos.
 - Alta establece `activo=true` y `disponible=true`. El cliente no puede cambiar ID, activo ni disponibilidad en alta/edición.
 - La disponibilidad la controlan los servicios de préstamo: la aprobación reserva y la devolución libera. Editar el catálogo nunca libera un equipo reservado.
 - Desactivar conserva el registro y la disponibilidad actual. Puede repetirse. Las consultas de catálogo excluyen los inactivos y su detalle responde 404; el historial sigue conservando su `equipoId`.
 - Se permite desactivar durante un préstamo: su devolución sigue siendo posible y no reactiva el equipo.
-- No existe borrado físico ni reactivación en este alcance.
+- No existe borrado físico. Un equipo desactivado se puede **activar** de nuevo (`PUT /api/equipos/{id}/activar`, repetible): vuelve al catálogo y queda disponible, salvo que esté reservado o en manos de un usuario (préstamo `APROBADO` o `ENTREGADO`) tenga un daño sin resolver o esté en mantenimiento; en esos casos queda activo pero no disponible. En la pantalla, el ADMIN lo ve con el interruptor «Ver desactivados».
 - Edición y desactivación reutilizan `findByIdForUpdate` dentro de una transacción, como los módulos de préstamos.
 - Seguridad y CSRF quedan en la configuración existente. El cliente obtiene un token nuevo de `/api/auth/csrf` antes de cada escritura.
 - Errores JSON con `error`: 400 datos inválidos; 401 sin sesión; 403 sin permiso/CSRF; 404 inexistente o inactivo; 409 código repetido.
@@ -41,8 +49,8 @@ Cuerpo de alta/edición:
 
 Con JDK 25, MySQL 8 y una sesión iniciada mediante la API existente:
 
-1. Como ADMIN, abrir `/equipos.html`, registrar un equipo (botón «Registrar equipo», abre un modal con código, nombre y descripción), editar su nombre y comprobar el resultado al actualizar.
-2. Intentar un código repetido (409), código vacío o con espacios (400), nombre vacío, más de 50 caracteres y descripción de más de 200. La API debe responder 400, aunque se omitan las validaciones del navegador.
+1. Como ADMIN, abrir `/equipos.html`, registrar un equipo (botón «Registrar equipo», abre un modal con nombre, prefijo sugerido y descripción), editar su nombre y comprobar el resultado al actualizar.
+2. Registrar dos cables seguidos (`CAB-001` y `CAB-002`) y un proyector (`PRO-001`); probar un prefijo de 2 o 4 letras (400), nombre vacío, más de 50 caracteres y descripción de más de 200. La API debe responder 400, aunque se omitan las validaciones del navegador.
 3. Como USUARIO, comprobar que no se muestra el formulario administrativo y que el listado inicial solo contiene disponibles. Intentar escrituras directamente: 403.
 4. Solicitar el equipo, aprobarlo como ADMIN y actualizar el catálogo. Debe quedar no disponible. Editar su nombre no debe liberarlo.
 5. Entregar, desactivar y devolver. Debe conservarse el préstamo en el historial y el equipo debe seguir fuera del catálogo.

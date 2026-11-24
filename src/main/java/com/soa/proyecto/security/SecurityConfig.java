@@ -6,6 +6,7 @@ import tools.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.Authentication;
@@ -45,9 +46,12 @@ public class SecurityConfig {
                         .requestMatchers("/", "/**/*.html", "/favicon.ico",
                                 "/css/**", "/js/**", "/img/**",
                                 "/api/auth/**").permitAll()
-                        // Equipos: consulta para ambos roles; escritura solo ADMIN.
+                        // Equipos: consulta para ambos roles; escritura y lista de desactivados solo ADMIN.
+                        .requestMatchers(HttpMethod.GET, "/api/equipos/desactivados").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/equipos", "/api/equipos/*").hasAnyRole("ADMIN", "USUARIO")
                         .requestMatchers("/api/equipos/**").hasRole("ADMIN")
+                        // Usuarios (listar y bloquear): solo ADMIN.
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                         // Préstamos: solicitar y ver los propios como USUARIO.
                         .requestMatchers(HttpMethod.POST, "/api/prestamos").hasRole("USUARIO")
                         .requestMatchers(HttpMethod.GET, "/api/prestamos/mios").hasRole("USUARIO")
@@ -71,6 +75,8 @@ public class SecurityConfig {
                             String mensajeError;
                             if (username == null || username.isBlank() || password == null || password.isBlank()) {
                                 mensajeError = "Debes ingresar el usuario y la contraseña.";
+                            } else if (exception instanceof DisabledException) {
+                                mensajeError = "Tu cuenta está bloqueada. Acércate a la administración.";
                             } else if (!usuarioRepository.existsByUsername(username.strip())) {
                                 mensajeError = "El usuario ingresado no existe.";
                             } else {

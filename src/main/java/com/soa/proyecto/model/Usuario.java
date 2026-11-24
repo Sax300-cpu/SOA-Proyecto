@@ -29,4 +29,13 @@ public class Usuario {
     @Enumerated(EnumType.STRING)
     @Column(name = "usuRol", length = 10, nullable = false)
     private Rol rol;
+
+    // Una cuenta bloqueada no puede iniciar sesión ni solicitar préstamos (null se trata como no bloqueada).
+    @Column(name = "usuBloqueado")
+    private Boolean bloqueado;
+
+    // Constructor sin el indicador de bloqueo (cuentas nuevas y pruebas).
+    public Usuario(Long id, String nombre, String username, String password, Rol rol) {
+        this(id, nombre, username, password, rol, false);
+    }
 }
